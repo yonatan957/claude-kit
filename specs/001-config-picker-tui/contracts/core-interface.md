@@ -19,19 +19,33 @@ selection toggle — MUST have no side effects.
   configure).
 - **Never**: prints, prompts, raises for "no changes" (that's a valid, common result).
 
-## `core.apply(plan: SelectionPlan) -> list[ApplyResult]`
+## `core.apply(plan: SelectionPlan, registry: dict, ctx: ApplyContext) -> list[ApplyResult]`
 
 **Purpose**: What the single "Approve & install" action calls (FR-005). Performs installs then
 removals as transactions (snapshot → apply → health-check → commit/revert per Constitution
-Principle I) — the transaction mechanics themselves are a dependency of this contract, not
-re-specified here (see research.md §2).
+Principle I) via `src/core/transaction.py`.
 
-- **Input**: the `SelectionPlan` produced by the most recent `core.plan` call
+- **Input**: the `SelectionPlan` produced by the most recent `core.plan` call; `registry` (to look
+  up each component's install mechanism — scripts, marketplace commands, file lists); `ctx` (an
+  `ApplyContext` bundling `installed_path`/`installed` plus pluggable `install_component` /
+  `remove_component` callables — the default implementations run the registry-declared
+  `install.sh`/`uninstall.sh`). *Refinement made during implementation*: the original draft of
+  this contract took only `plan`, but the install/removal mechanism cannot act without registry
+  and state access, so both were added — `core/` is still pure with respect to I/O it doesn't
+  declare (no printing/prompting), it just needs these inputs to do its one stated job.
 - **Output**: one `ApplyResult` per component acted on, in the fixed dependency order (tools →
   plugins → the rest, per the UX walkthrough) — never partial silence; every attempted component
-  gets a result, `ok: false` included.
+  gets a result, `ok: false` included. A component with no declared `uninstall.sh` still gets
+  `ok: true` with a `detail` explaining what was left in place (edge case).
 - **Never**: prompts for input (components needing input become pending, surfaced separately by
   `core.pending` — they are not requested mid-`apply`).
+
+## `ApplyContext`
+
+Bundles what `core.apply` needs beyond the plan: `installed_path: Path`, `installed: dict` (the
+in-memory `installed.json` contents it mutates and persists), and the two pluggable action
+callables above. This is the seam frontends/tests use to inject fakes without touching the
+filesystem or a real catalog.
 
 ## `core.pending(state, registry) -> list[ConfigStep]`
 
@@ -45,17 +59,27 @@ configuration when `core.plan` returned `is_noop=true` (FR-011).
   `user_requested_reconfigure` render identically)
 - **Never**: prints, prompts — the frontend collects `answers` and passes them to `submit`.
 
-## `core.submit(step: ConfigStep, answers: dict) -> VerifyResult`
+## `core.submit(step: ConfigStep, answers: dict, ctx: SubmitContext) -> VerifyResult`
 
 **Purpose**: Runs the component's `config.sh` with `answers` as env vars, then its `verify.sh`,
 and returns the outcome (FR-014). One call per component in the configure wizard.
 
-- **Input**: the `ConfigStep` being completed, `answers` keyed by each `ConfigurationInput.name`
-- **Output**: `VerifyResult` — on failure, the component's install is untouched and it remains
-  `PENDING_CONFIGURATION` for the next `core.pending` call (FR-014); the frontend reports the
-  failure and lets the user retry without restarting the whole flow.
+- **Input**: the `ConfigStep` being completed, `answers` keyed by each `ConfigurationInput.name`,
+  and `ctx` (a `SubmitContext` bundling `installed_path`/`installed`/`registry` plus pluggable
+  `run_config`/`run_verify` callables) — added for the same reason as `ApplyContext` above.
+- **Output**: `VerifyResult` — on failure (either `config.sh` or `verify.sh`), the component's
+  install is untouched and it remains `PENDING_CONFIGURATION` for the next `core.pending` call
+  (FR-014); the frontend reports the failure and lets the user retry without restarting the whole
+  flow.
 - **Never**: prompts for retry, prints progress — the frontend renders `VerifyResult` and decides
   what to show next (e.g., re-invoking the configure step for that same component).
+
+## `core.configure.request_reconfigure(state, type_name, name)`
+
+**Purpose**: What the frontend calls when a user re-selects an already-`CONFIGURED` component
+(FR-015). Flips that component's `config.status` back to `"pending"` while preserving
+`verified_at`, so the next `core.pending` call reports it with `reason:
+user_requested_reconfigure` instead of `newly_installed` — both render identically in the wizard.
 
 ## What is explicitly out of contract here
 
