@@ -1,0 +1,59 @@
+{
+  "name": "base-kit",
+  "description": "Blessed Claude Code plugins for our org — served from the internal catalog repo, no external fetches",
+  "version": "1.0.0",
+  "owner": {
+    "name": "DevTools / Base-Kit",
+    "email": "devtools@internal.corp",
+    "url": "https://gitlab.internal.corp/devtools/base-kit-catalog"
+  },
+
+  "plugins": [
+    {
+      "name": "org-standards",
+      "displayName": "Org Standards",
+      "source": "./plugins/org-standards",
+      "description": "Our engineering conventions as hooks and an agent: commit message format, secret scanning before write, and a reviewer agent tuned to our style guide",
+      "version": "1.2.0",
+      "category": "Org Baseline",
+      "keywords": ["hooks", "conventions", "security"],
+      "author": {
+        "name": "DevTools / Base-Kit",
+        "email": "devtools@internal.corp"
+      },
+      "homepage": "https://docs.internal.corp/base-kit/plugins/org-standards",
+      "license": "UNLICENSED"
+    },
+
+    {
+      "name": "python-lsp",
+      "displayName": "Python Code Intelligence",
+      "source": "./plugins/python-lsp",
+      "description": "Pyright language server wiring — gives Claude type errors and go-to-definition after every edit. Requires the pyright-langserver binary (install the 'pyright' tool first)",
+      "version": "0.4.1",
+      "category": "Code Intelligence",
+      "keywords": ["lsp", "python", "diagnostics"],
+      "defaultEnabled": false,
+      "author": {
+        "name": "DevTools / Base-Kit",
+        "email": "devtools@internal.corp"
+      },
+      "license": "UNLICENSED"
+    },
+
+    {
+      "name": "release-tools",
+      "displayName": "Release Tools",
+      "source": "./plugins/release-tools",
+      "description": "Changelog generation, version bumping, and release-note drafting against our internal release process",
+      "version": "2.0.3",
+      "category": "Developer Workflow",
+      "keywords": ["release", "changelog", "versioning"],
+      "author": {
+        "name": "Platform Team",
+        "email": "platform@internal.corp"
+      },
+      "license": "UNLICENSED"
+    }
+  ]
+}

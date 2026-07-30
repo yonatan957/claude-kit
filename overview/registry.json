@@ -1,0 +1,206 @@
+{
+  "schema_version": 2,
+  "version": "1.5.0",
+  "min_cli_version": "0.4.0",
+  "hash_algo": "sha256",
+
+  "_comment_files": "Every 'files' map is keyed by repo-relative path. Hashes are computed by CI on every MR — never written by hand. The CLI compares them against the file on disk and against installed.json to tell 'outdated' apart from 'locally modified'.",
+
+  "types": [
+    { "name": "skills",  "handler": "content",     "catalog_dir": "skills/",  "target": "~/.claude/skills/" },
+    { "name": "agents",  "handler": "content",     "catalog_dir": "agents/",  "target": "~/.claude/agents/" },
+    { "name": "plugins", "handler": "marketplace", "marketplace": "base-kit" },
+    { "name": "tools",   "handler": "script" },
+    { "name": "mcps",    "handler": "script",      "inject": "mcpServers" }
+  ],
+
+  "plugin_marketplace": {
+    "name": "base-kit",
+    "path": ".",
+    "commands": {
+      "add": "claude plugin marketplace add {path}",
+      "install": "claude plugin install {id}@base-kit --scope user",
+      "uninstall": "claude plugin uninstall {id}@base-kit",
+      "update": "claude plugin marketplace update base-kit"
+    }
+  },
+
+  "skill_sources": [
+    {
+      "name": "clawhub",
+      "description": "OPTIONAL extra source — our own skills/ folder is the source of truth",
+      "enabled": false,
+      "commands": {
+        "search": "clawhub search {query} --json",
+        "install": "clawhub install {id}",
+        "uninstall": "clawhub uninstall {id}",
+        "update": "clawhub update {id}"
+      }
+    }
+  ],
+
+  "skills": {
+    "dr-runbooks": {
+      "description": "Disaster recovery runbooks and topology mapping",
+      "category": "SRE / Operations",
+      "recommended": true,
+      "note": "Our blessed DR runbook — prefer this over community versions",
+      "path": "skills/dr-runbooks/",
+      "files": {
+        "skills/dr-runbooks/SKILL.md": "3b1f8c4a9d2e7f60b5a1c8d3e94f2a7b6c05d18e3f4a9b2c7d6e1f08a3b4c5d6",
+        "skills/dr-runbooks/references/topology.md": "8ac2f019b3d4e5f6a708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e"
+      }
+    },
+    "k8s-debug": {
+      "description": "Kubernetes cluster debugging workflows",
+      "category": "SRE / Operations",
+      "path": "skills/k8s-debug/",
+      "files": {
+        "skills/k8s-debug/SKILL.md": "c47d9e1a2b3f4056789abcdef0123456789abcdef0123456789abcdef0123456"
+      }
+    },
+    "code-reviewer": {
+      "description": "Agent persona for PR review: style, security, test coverage",
+      "category": "Code Quality",
+      "recommended": true,
+      "path": "skills/code-reviewer/",
+      "files": {
+        "skills/code-reviewer/SKILL.md": "5e8a1b0c3d2f4e6798a0b1c2d3e4f5061728394a5b6c7d8e9f0a1b2c3d4e5f60"
+      }
+    }
+  },
+
+  "agents": {
+    "incident-lead": {
+      "description": "Drives an incident end to end: triage, comms, timeline",
+      "category": "SRE / Operations",
+      "recommended": true,
+      "path": "agents/incident-lead.md",
+      "files": {
+        "agents/incident-lead.md": "9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f7081920a1b2c3d4e5f60718293a4b5c"
+      }
+    },
+    "migration-buddy": {
+      "description": "Plans and executes schema migrations against our standards",
+      "category": "Data",
+      "path": "agents/migration-buddy.md",
+      "files": {
+        "agents/migration-buddy.md": "2f3a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718"
+      }
+    }
+  },
+
+  "plugins": {
+    "org-standards": {
+      "category": "Org Baseline",
+      "recommended": true,
+      "note": "Our conventions as hooks — everyone should have this",
+      "files": {
+        "plugins/org-standards/.claude-plugin/plugin.json": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
+        "plugins/org-standards/hooks/hooks.json": "b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1",
+        "plugins/org-standards/agents/reviewer.md": "c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2"
+      }
+    },
+    "python-lsp": {
+      "category": "Code Intelligence",
+      "recommended": true,
+      "requires": { "tool": "pyright" },
+      "files": {
+        "plugins/python-lsp/.claude-plugin/plugin.json": "d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3",
+        "plugins/python-lsp/.lsp.json": "e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4"
+      }
+    },
+    "claude-kit-notify": {
+      "category": "Org Baseline",
+      "recommended": true,
+      "note": "SessionStart banner for updates — reads ~/.claude-kit/state.json",
+      "files": {
+        "plugins/claude-kit-notify/.claude-plugin/plugin.json": "f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5",
+        "plugins/claude-kit-notify/hooks/hooks.json": "0718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f6",
+        "plugins/claude-kit-notify/hooks/session-start.sh": "18293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f607"
+      }
+    },
+    "release-tools": {
+      "category": "Developer Workflow",
+      "files": {
+        "plugins/release-tools/.claude-plugin/plugin.json": "8293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f6071",
+        "plugins/release-tools/skills/changelog/SKILL.md": "93a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f607182"
+      }
+    }
+  },
+
+  "tools": {
+    "graphify": {
+      "description": "Visualizes MCP graphs locally",
+      "version": "0.9.2",
+      "scripts": {
+        "install": "scripts/tools/graphify/install.sh",
+        "verify": "scripts/tools/graphify/verify.sh",
+        "uninstall": "scripts/tools/graphify/uninstall.sh"
+      },
+      "files": {
+        "scripts/tools/graphify/install.sh": "a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293",
+        "scripts/tools/graphify/verify.sh": "b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f6071829304",
+        "scripts/tools/graphify/uninstall.sh": "c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f607182930415"
+      }
+    },
+    "gitlab-cli": {
+      "description": "GitLab CLI (glab), logged in to our GitLab",
+      "version": "1.1.0",
+      "scripts": {
+        "install": "scripts/tools/gitlab-cli/install.sh",
+        "config": "scripts/tools/gitlab-cli/config.sh",
+        "verify": "scripts/tools/gitlab-cli/verify.sh",
+        "uninstall": "scripts/tools/gitlab-cli/uninstall.sh"
+      },
+      "files": {
+        "scripts/tools/gitlab-cli/install.sh": "d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293041526",
+        "scripts/tools/gitlab-cli/config.sh": "e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f6071829304152637",
+        "scripts/tools/gitlab-cli/verify.sh": "f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f607182930415263748",
+        "scripts/tools/gitlab-cli/uninstall.sh": "0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293041526374859"
+      }
+    }
+  },
+
+  "mcps": {
+    "jira-internal": {
+      "description": "Internal Jira access for Claude Code",
+      "category": "Project Management",
+      "version": "1.4.0",
+      "scripts": {
+        "install": "scripts/mcps/jira-internal/install.sh",
+        "config": "scripts/mcps/jira-internal/config.sh",
+        "verify": "scripts/mcps/jira-internal/verify.sh",
+        "uninstall": "scripts/mcps/jira-internal/uninstall.sh"
+      },
+      "files": {
+        "scripts/mcps/jira-internal/install.sh": "1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f6071829304152637485960",
+        "scripts/mcps/jira-internal/config.sh": "2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f607182930415263748596071",
+        "scripts/mcps/jira-internal/verify.sh": "3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293041526374859607182",
+        "scripts/mcps/jira-internal/uninstall.sh": "4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f6071829304152637485960718293"
+      },
+      "inputs": [
+        {
+          "name": "JIRA_API_TOKEN",
+          "prompt": "Paste your Jira API token",
+          "help_url": "https://jira.internal.corp/settings/tokens",
+          "sensitive": true
+        }
+      ],
+      "mcp_config": {
+        "command": "mcp-server-jira",
+        "args": [],
+        "env_file": "~/.claude-kit/env.d/jira-internal"
+      }
+    },
+
+    "docs-internal": {
+      "description": "Search the internal docs portal from Claude Code",
+      "category": "Knowledge",
+      "mcp_config": {
+        "command": "mcp-docs",
+        "args": ["--endpoint", "https://docs.internal.corp"]
+      }
+    }
+  }
+}

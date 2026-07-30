@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>claude-kit(1) — UX Walkthrough v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDF0F1; --ink:#1B2229; --ink-soft:#4A555F; --rule:#C9D1D6;
+    --accent:#0E7C6B;
+    --term-bg:#12161C; --term-chrome:#1C222B; --term-text:#D7DEE6;
+    --t-dim:#7C8794; --t-green:#4EC97B; --t-red:#FF6B6B; --t-yellow:#E7C664;
+    --t-cyan:#6FC3DF; --t-magenta:#C792EA; --t-white:#F2F5F8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+  body{background:var(--paper);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;font-size:16.5px;line-height:1.6}
+  .wrap{max-width:880px;margin:0 auto;padding:56px 24px 96px}
+
+  header{border-bottom:2px solid var(--ink);padding-bottom:28px;margin-bottom:12px}
+  .manline{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:26px}
+  h1{font-size:clamp(30px,5vw,44px);font-weight:700;letter-spacing:-.02em;line-height:1.1}
+  h1 .mono{font-family:'IBM Plex Mono',monospace;color:var(--accent)}
+  .synopsis{margin-top:20px;font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink-soft);line-height:1.9}
+  .synopsis b{color:var(--ink);font-weight:600}
+  .notice{margin-top:20px;font-size:14.5px;color:var(--ink-soft);border-left:3px solid var(--accent);padding:2px 0 2px 14px}
+
+  section{margin-top:64px}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
+  .sec-num{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.08em}
+  h2{font-size:24px;font-weight:700;letter-spacing:-.01em}
+  h2 code, p code, li code, td code{font-family:'IBM Plex Mono',monospace;font-size:.88em;background:#DFE5E7;padding:1px 6px;border-radius:4px}
+  section > p{max-width:70ch;color:var(--ink-soft);margin:10px 0 18px}
+  h3{font-size:16px;font-weight:600;margin:30px 0 10px;color:var(--ink)}
+  h3 .tag{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent);font-weight:600;margin-right:8px}
+
+  .term{background:var(--term-bg);border-radius:10px;overflow:hidden;box-shadow:0 10px 30px -12px rgba(18,22,28,.45),0 2px 6px rgba(18,22,28,.2);margin:16px 0 8px}
+  .term-bar{display:flex;align-items:center;gap:8px;background:var(--term-chrome);padding:9px 14px;border-bottom:1px solid #0B0E12}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .dot.r{background:#FF5F57}.dot.y{background:#FEBC2E}.dot.g{background:#28C840}
+  .term-title{margin-left:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--t-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .term pre{padding:18px 20px;overflow-x:auto;font-family:'IBM Plex Mono',monospace;font-size:13.5px;line-height:1.65;color:var(--term-text)}
+  .p{color:var(--accent);font-weight:600} .cmd{color:var(--t-white);font-weight:600}
+  .ok{color:var(--t-green)} .err{color:var(--t-red)} .wrn{color:var(--t-yellow)}
+  .inf{color:var(--t-cyan)} .dim{color:var(--t-dim)} .sel{color:var(--t-magenta)} .hl{color:var(--t-white)}
+  .foot{color:var(--t-dim);border-top:1px solid #2A323D;display:inline-block;padding-top:6px;margin-top:4px}
+
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+  th{text-align:left;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);border-bottom:2px solid var(--ink);padding:8px 8px}
+  td{border-bottom:1px solid var(--rule);padding:8px 8px;vertical-align:top}
+  td.c{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:12.5px}
+
+  ul.guar{margin:14px 0 0 2px;list-style:none}
+  ul.guar li{padding-left:26px;position:relative;margin-bottom:10px;color:var(--ink-soft);max-width:72ch}
+  ul.guar li::before{content:"✓";position:absolute;left:0;color:var(--accent);font-family:'IBM Plex Mono',monospace;font-weight:600}
+  ul.guar li b{color:var(--ink)}
+
+  .principle{background:#FFF7E0;border:2px solid #D6B656;border-radius:10px;padding:18px 22px;margin:18px 0;font-size:15px;color:var(--ink)}
+  .principle b{font-family:'IBM Plex Mono',monospace}
+
+  footer{margin-top:80px;border-top:1px solid var(--rule);padding-top:18px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="manline"><span>CLAUDE-KIT(1)</span><span>Base-Kit Manual</span><span>CLAUDE-KIT(1)</span></div>
+  <h1><span class="mono">claude-kit</span> — UX Walkthrough</h1>
+  <div class="synopsis">
+    <b>SYNOPSIS</b><br>
+    claude-kit <b>init</b> · <b>config</b> [&lt;type&gt;] [--recommended] · <b>update</b> · <b>add</b>|<b>remove</b> &lt;type&gt; &lt;name&gt; · <b>list</b> · <b>check</b> · <b>--version</b><br>
+    <span style="color:var(--ink)">&lt;type&gt;</span> = skills | agents | plugins | tools | mcps
+  </div>
+  <p class="notice">This is the target experience — nothing here is implemented yet. Every transcript below is a mockup of how the tool should look and behave from the developer's terminal.</p>
+</header>
+
+<!-- ================= 1. INIT ================= -->
+<section id="init">
+  <div class="sec-head"><span class="sec-num">§1</span><h2>First time — <code>claude-kit init</code></h2></div>
+  <p>Runs once per machine, right after <code>npm install -g claude-kit</code> (from our Artifactory mirror). Bootstraps everything, then drops straight into <code>config</code> so the user never has to learn a second command to get value.</p>
+
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit init</span></div>
+<pre><span class="p">$</span> <span class="cmd">npm install -g claude-kit</span>
+<span class="dim">...claude-kit 0.4.0 (linux-x64 binary) from artifactory.internal.corp...</span>
+<span class="dim">   no Python needed on this machine — the CLI ships frozen</span>
+
+<span class="p">$</span> <span class="cmd">claude-kit init</span>
+
+  <span class="hl">Claude-Kit 0.4.0</span> <span class="dim">— org package manager for Claude Code</span>
+
+<span class="dim">[1/4]</span> Checking Claude Code installation...
+      <span class="err">✗</span> Claude Code not found — installing...
+      <span class="ok">✓</span> Claude Code installed <span class="dim">(v2.1.3)</span>
+
+<span class="dim">[2/4]</span> Cloning organization catalog...
+      <span class="ok">✓</span> Catalog cloned to <span class="inf">~/.claude-kit-repo</span> <span class="dim">(commit b7c2f01)</span>
+
+<span class="dim">[3/4]</span> Registering the plugin marketplace...
+      <span class="ok">✓</span> <span class="dim">claude plugin marketplace add ~/.claude-kit-repo</span>
+      <span class="ok">✓</span> marketplace <span class="hl">base-kit</span> registered <span class="dim">(local path — no network, 3 plugins available)</span>
+
+<span class="dim">[4/4]</span> Applying organization baseline...
+      <span class="ok">✓</span> Baseline written to <span class="inf">~/.claude/genie-claude.md</span>
+      <span class="ok">✓</span> Added one reference line to <span class="inf">~/.claude/CLAUDE.md</span>
+        <span class="dim">@genie-claude.md   ← your file is otherwise untouched</span>
+
+Setup complete. Opening configuration...</pre>
+  </div>
+  <p>The baseline is its own file. The user's <code>CLAUDE.md</code> gains one <code>@genie-claude.md</code> line and is never otherwise touched; <code>update</code> refreshes the baseline by replacing that one file.</p>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">~/.claude/CLAUDE.md — after init</span></div>
+<pre><span class="dim"># my own notes, exactly as they were</span>
+<span class="dim">- always run tests before pushing</span>
+<span class="dim">- prefer small PRs</span>
+
+<span class="hl">@genie-claude.md</span>  <span class="dim">← the only line claude-kit owns</span></pre>
+  </div>
+</section>
+
+<!-- ================= 2. CONFIG ================= -->
+<section id="config">
+  <div class="sec-head"><span class="sec-num">§2</span><h2>The heart of it — <code>claude-kit config</code></h2></div>
+  <p>One interactive command, two steps: <b>Picker → Configure</b>. The picker lists every type the registry declares — skills, agents, plugins, tools, MCP servers — pre-checked with your current state. You move with the arrows, toggle with <code>enter</code>, and finish by scrolling to the bottom and approving. Every type is also reachable on its own with <code>config &lt;type&gt;</code>.</p>
+
+  <h3><span class="tag">Keys</span>The whole interaction model</h3>
+  <table>
+    <thead><tr><th>Key</th><th>Meaning — everywhere, no exceptions</th></tr></thead>
+    <tbody>
+      <tr><td class="c"><b>↑ ↓</b></td><td>move through the list</td></tr>
+      <tr><td class="c"><b>enter</b></td><td>select / unselect the highlighted row — and on the last row, <b>approve &amp; install</b></td></tr>
+      <tr><td class="c"><b>tab</b></td><td>switch between the main screen and search mode, either direction</td></tr>
+      <tr><td class="c"><b>ctrl-c</b></td><td>quit without installing anything</td></tr>
+    </tbody>
+  </table>
+  <p>One verb per key, no modes to remember: <code>enter</code> always means "act on the row I'm standing on". A one-line footer on every screen repeats it, so the UI never relies on the user remembering.</p>
+
+  <h3><span class="tag">Gate</span>When does Recommended / Custom appear?</h3>
+  <p>Decided by <b>state, not history</b>: the prompt shows iff <code>installed.json</code> contains no claude-kit-managed components. So a user who ran <code>init</code>, aborted, and comes back next week still gets it — and a user with an existing setup never sees it again; <code>config</code> opens straight into the picker, pre-checked.</p>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit config (fresh machine)</span></div>
+<pre><span class="p">$</span> <span class="cmd">claude-kit config</span>          <span class="dim"># installed.json is empty → ask once</span>
+
+<span class="sel">?</span> <span class="hl">How would you like to set up?</span>
+ <span class="sel">❯</span> <span class="hl">Recommended</span>   <span class="dim">select our suggested set, done in one step</span>
+   <span class="hl">Custom</span>        <span class="dim">choose everything yourself</span>
+
+<span class="dim">Recommended opens the picker with the blessed set already selected —</span>
+<span class="dim">scroll to the bottom and approve, or change anything on the way down.</span></pre>
+  </div>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit config (existing setup)</span></div>
+<pre><span class="p">$</span> <span class="cmd">claude-kit config</span>          <span class="dim"># managed components exist → no prompt</span>
+<span class="dim">Opening picker — your current setup is pre-checked.</span>
+
+<span class="p">$</span> <span class="cmd">claude-kit config --recommended</span>
+<span class="dim">Re-align with the blessed set: pre-selects it on top of your current state,</span>
+<span class="dim">then opens the picker so you can see and change it before approving.</span></pre>
+  </div>
+
+  <h3><span class="tag">Step 1</span>The picker — one list, five sections, approve at the end</h3>
+  <p>Every type appears as a section in one scrollable list, each header carrying a <b>live selection counter</b>. The last row of the list is <b>Approve &amp; install</b> — reaching it means you've passed everything you changed on the way down. The renderer doesn't know what a "plugin" or an "agent" is; it draws whatever sections the registry declares.</p>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit config · picker</span></div>
+<pre><span class="sel">?</span> <span class="hl">Select components</span>
+
+  <span class="dim">── Skills </span><span class="ok">(2 selected)</span><span class="dim"> ───────────────────────────</span>
+  <span class="dim">   ★ Recommended — SRE / Operations</span>
+ <span class="sel">❯</span> <span class="ok">◉</span> <span class="hl">dr-runbooks</span>       <span class="dim">our blessed DR runbook</span>
+   ◯ <span class="hl">k8s-debug</span>         <span class="dim">cluster debugging workflows</span>
+  <span class="dim">   Code Quality</span>
+   <span class="ok">◉</span> <span class="hl">code-reviewer</span>     <span class="dim">PR review persona</span>
+
+  <span class="dim">── Agents </span><span class="ok">(1 selected)</span><span class="dim"> ───────────────────────────</span>
+   <span class="ok">◉</span> <span class="hl">incident-lead</span>     <span class="dim">drives an incident end to end</span>
+   ◯ <span class="hl">migration-buddy</span>   <span class="dim">plans and executes schema migrations</span>
+
+  <span class="dim">── Plugins </span><span class="ok">(2 selected)</span><span class="dim"> ──────────────────────────</span>
+   <span class="ok">◉</span> <span class="hl">org-standards</span>     <span class="dim">our conventions as hooks (1.2.0)</span>
+   <span class="ok">◉</span> <span class="hl">python-lsp</span>        <span class="dim">type errors after every edit (0.4.1)</span>
+   ◯ <span class="hl">release-tools</span>     <span class="dim">changelog + release notes (2.0.3)</span>
+
+  <span class="dim">── Tools </span><span class="ok">(2 selected)</span><span class="dim"> ────────────────────────────</span>
+   <span class="ok">◉</span> <span class="hl">graphify</span>          <span class="dim">Visualizes MCP graphs (0.9.2)</span>
+   <span class="ok">◉</span> <span class="hl">gitlab-cli</span>        <span class="dim">GitLab CLI (1.1.0)</span>
+
+  <span class="dim">── MCP servers </span><span class="ok">(2 selected)</span><span class="dim"> ──────────────────────</span>
+   <span class="ok">◉</span> <span class="hl">jira-internal</span>     <span class="dim">Internal Jira access</span>
+   <span class="ok">◉</span> <span class="hl">docs-internal</span>     <span class="dim">Internal docs search</span>
+
+  <span class="dim">─────────────────────────────────────────────────</span>
+   <span class="ok">✓ Approve &amp; install</span>        <span class="dim">enter here to run</span>
+
+ <span class="foot">↑↓ move · enter: select · tab: search · ↓ to the last row to approve</span></pre>
+  </div>
+
+  <p>Standing on the last row, <code>enter</code> runs immediately — the same key, acting on the row you're on:</p>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit config · approving</span></div>
+<pre>  <span class="dim">── MCP servers </span><span class="ok">(2 selected)</span><span class="dim"> ──────────────────────</span>
+   <span class="ok">◉</span> <span class="hl">jira-internal</span>     <span class="dim">Internal Jira access</span>
+   <span class="ok">◉</span> <span class="hl">docs-internal</span>     <span class="dim">Internal docs search</span>
+
+  <span class="dim">─────────────────────────────────────────────────</span>
+ <span class="sel">❯</span> <span class="ok">✓ Approve &amp; install</span>        <span class="dim">enter here to run</span>
+
+ <span class="foot">↑↓ move · enter: approve &amp; install · tab: search · ctrl-c: quit</span></pre>
+  </div>
+
+  <h3><span class="tag">Step 1b</span>Search mode — <code>tab</code> in, <code>tab</code> back</h3>
+  <p><code>tab</code> is a toggle, not a one-way door: it moves you between the main screen and search mode in either direction. Search covers our own catalog by default; if a <code>skill_source</code> is configured, its results appear underneath ours, tagged with their origin. Selecting works the same way it does everywhere — <code>enter</code> on the highlighted row — and anything you select gets pinned to the top of the main list when you tab back.</p>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit config · search mode</span></div>
+<pre><span class="sel">?</span> <span class="hl">Search</span>: <span class="cmd">terra</span>
+
+  <span class="dim">── our catalog ──────────────────────────────────</span>
+ <span class="sel">❯</span> ◯ <span class="hl">terraform-review</span>    <span class="dim">skill · our blessed TF review</span>
+
+  <span class="dim">── clawhub </span><span class="dim">(optional source) ────────────────────</span>
+   <span class="ok">◉</span> <span class="hl">terraform-planner</span>   <span class="dim">skill · plan/apply review · ★ 1.2k</span>
+   ◯ <span class="hl">tf-state-surgeon</span>    <span class="dim">skill · state debugging · ★ 340</span>
+
+ <span class="foot">type: query · ↑↓ move · enter: select · tab: back to the main screen</span></pre>
+  </div>
+
+  <h3><span class="tag">Step 2</span>It runs</h3>
+  <p>Approving installs straight away — no second screen:</p>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit config · installing</span></div>
+<pre>Installing <span class="dim">(nothing needed from you)</span>...
+  <span class="ok">✓</span> skill   <span class="hl">dr-runbooks</span>      copied to ~/.claude/skills/
+  <span class="ok">✓</span> skill   <span class="hl">code-reviewer</span>    copied to ~/.claude/skills/
+  <span class="ok">✓</span> agent   <span class="hl">incident-lead</span>    copied to ~/.claude/agents/
+  <span class="ok">✓</span> tool    <span class="hl">graphify</span>         0.9.2 installed <span class="dim">(install.sh, 12s)</span>
+  <span class="ok">✓</span> tool    <span class="hl">gitlab-cli</span>       1.1.0 installed <span class="dim">(install.sh, 8s)</span>
+  <span class="ok">✓</span> plugin  <span class="hl">org-standards</span>    1.2.0 <span class="dim">(claude plugin install org-standards@base-kit)</span>
+  <span class="ok">✓</span> plugin  <span class="hl">python-lsp</span>       0.4.1 <span class="dim">(installed disabled — enable when ready)</span>
+  <span class="ok">✓</span> mcp     <span class="hl">jira-internal</span>    1.4.0 installed · mcp_config added to settings
+  <span class="ok">✓</span> mcp     <span class="hl">docs-internal</span>    mcp_config added to settings
+
+  <span class="dim">order is fixed by dependency, not by section: tools → plugins → the rest</span></pre>
+  </div>
+
+  <h3><span class="tag">Step 3</span>Configure — opens automatically, pending items preselected</h3>
+  <p>Same keys again: arrows to move, <code>enter</code> to select, approve at the bottom.</p>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit config · configure</span></div>
+<pre><span class="sel">?</span> <span class="hl">Configure components</span>  <span class="dim">(pending are preselected; check a ✓ item to reconfigure it)</span>
+
+ <span class="sel">❯</span> <span class="ok">◉</span> <span class="hl">gitlab-cli</span>       <span class="wrn">⚠ pending</span>
+   <span class="ok">◉</span> <span class="hl">jira-internal</span>    <span class="wrn">⚠ pending</span>
+   ◯ <span class="hl">graphify</span>         <span class="dim">nothing to configure</span>
+   ◯ <span class="hl">docs-internal</span>    <span class="dim">nothing to configure</span>
+
+  <span class="dim">─────────────────────────────────────────────────</span>
+   <span class="ok">✓ Configure selected</span>       <span class="dim">enter here to start</span>
+
+ <span class="foot">↑↓ move · enter: select · ctrl-c: skip for now (stays pending)</span>
+
+<span class="inf">━━ Configure 1/2: gitlab-cli ━━━━━━━━━━━━━━━━━━━━</span>
+  <span class="dim">running config.sh — glab takes over the terminal:</span>
+  <span class="dim">┌────────────────────────────────────────────┐</span>
+  <span class="dim">│</span> ? Paste your personal access token: <span class="hl">******</span>  <span class="dim">│</span>
+  <span class="dim">│</span> <span class="ok">✓</span> Logged in as yonatan                      <span class="dim">│</span>
+  <span class="dim">└────────────────────────────────────────────┘</span>
+  <span class="ok">✓ verified</span> <span class="dim">(verify.sh)</span>
+
+<span class="inf">━━ Configure 2/2: jira-internal ━━━━━━━━━━━━━━━━━</span>
+  <span class="dim">Create a token at:</span> <span class="inf">https://jira.internal.corp/settings/tokens</span>
+<span class="sel">?</span> Paste your Jira API token <span class="dim">(hidden)</span>: <span class="hl">********</span>
+  <span class="dim">running config.sh with your inputs as env vars...</span>
+  <span class="ok">✓</span> secret written by config.sh <span class="dim">(~/.claude-kit/env.d/, chmod 600)</span>
+  <span class="ok">✓ verified</span> <span class="dim">(verify.sh — MCP responds)</span>
+
+<span class="hl">━━ Done ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+  <span class="ok">✓</span> 7 installed · <span class="ok">2 configured</span> · 0 pending
+  <span class="dim">Restart Claude Code to pick up new MCP servers.</span></pre>
+  </div>
+
+  <h3><span class="tag">Later</span>Returning user — unchecking means remove</h3>
+  <p>Weeks later, <code>config</code> opens the picker pre-checked with the current setup — no Recommended/Custom prompt. The picker tells the truth about state, so <b>unchecking an installed item means removing it</b>. Pending removals are marked in red on the row itself, so they stay visible as you scroll down to approve.</p>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit config (returning user)</span></div>
+<pre><span class="p">$</span> <span class="cmd">claude-kit config</span>
+<span class="dim">Opening picker — current setup pre-checked.</span>
+
+<span class="sel">?</span> <span class="hl">Select components</span>
+  <span class="dim">── Skills </span><span class="ok">(3 selected)</span><span class="dim"> ───────────────────────────</span>
+   <span class="ok">◉</span> <span class="hl">dr-runbooks</span>      <span class="dim">installed</span>
+ <span class="sel">❯</span> <span class="ok">◉</span> <span class="hl">k8s-debug</span>        <span class="ok">+ will install</span>
+   ...
+  <span class="dim">── Tools </span><span class="ok">(1 selected)</span><span class="dim"> ────────────────────────────</span>
+   ◯ <span class="hl">gitlab-cli</span>       <span class="err">− WILL BE REMOVED (was installed)</span>
+   ...
+
+  <span class="dim">─────────────────────────────────────────────────</span>
+   <span class="ok">✓ Approve &amp; install</span>   <span class="err">· 1 removal</span>   <span class="dim">enter here to run</span>
+
+ <span class="foot">↑↓ move · enter: approve &amp; install · ctrl-c: quit</span></pre>
+  </div>
+
+  <h3><span class="tag">Later</span>Reconfiguring — no selection changes? Straight to Configure</h3>
+  <p>Jira token rotated? Run <code>config</code>, leave the picker untouched, scroll down and approve. Nothing to install or remove, so it goes straight to Configure, where you re-select the item to redo it:</p>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit config (reconfigure)</span></div>
+<pre><span class="sel">?</span> <span class="hl">Select components</span> <span class="dim">— unchanged · ✓ Approve &amp; install</span>
+<span class="dim">Nothing to install or remove — opening configuration.</span>
+
+<span class="sel">?</span> <span class="hl">Configure components</span>
+ <span class="sel">❯</span> <span class="ok">◉</span> <span class="hl">jira-internal</span>    <span class="ok">✓ configured</span> <span class="dim">(2026-07-10)</span>   <span class="dim">← re-checked by user</span>
+   ◯ <span class="hl">gitlab-cli</span>       <span class="ok">✓ configured</span>
+
+<span class="inf">━━ Configure 1/1: jira-internal ━━━━━━━━━━━━━━━━━</span>
+<span class="sel">?</span> Paste your Jira API token <span class="dim">(hidden)</span>: <span class="hl">********</span>
+  <span class="ok">✓</span> token replaced · <span class="ok">✓ verified</span></pre>
+  </div>
+
+  <h3><span class="tag">Scoped</span>One command per type — the same picker, one section</h3>
+  <p>Every type gets its own entry point — a filter on the same screen, not a new screen. Same keys, same approve row, same Configure.</p>
+  <table>
+    <thead><tr><th>Command</th><th>Opens</th></tr></thead>
+    <tbody>
+      <tr><td><code>claude-kit config</code></td><td>all five sections</td></tr>
+      <tr><td><code>claude-kit config skills</code></td><td>skills only</td></tr>
+      <tr><td><code>claude-kit config agents</code></td><td>agents only</td></tr>
+      <tr><td><code>claude-kit config plugins</code></td><td>plugins only</td></tr>
+      <tr><td><code>claude-kit config tools</code></td><td>tools only</td></tr>
+      <tr><td><code>claude-kit config mcps</code></td><td>MCP servers only</td></tr>
+    </tbody>
+  </table>
+  <p>These aren't separate implementations. <code>config &lt;type&gt;</code> is one command filtering to a declared type, and the names come from the registry — add a type to the catalog and its command exists on the next run.</p>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit config plugins</span></div>
+<pre><span class="p">$</span> <span class="cmd">claude-kit config plugins</span>
+
+<span class="sel">?</span> <span class="hl">Select plugins</span>  <span class="dim">— marketplace: base-kit (our catalog)</span>
+
+  <span class="dim">── Plugins </span><span class="ok">(2 selected)</span><span class="dim"> ──────────────────────────</span>
+  <span class="dim">   ★ Recommended — Org Baseline</span>
+ <span class="sel">❯</span> <span class="ok">◉</span> <span class="hl">org-standards</span>     <span class="dim">installed · 1.2.0</span>
+  <span class="dim">   Code Intelligence</span>
+   <span class="ok">◉</span> <span class="hl">python-lsp</span>        <span class="dim">installed · 0.4.1 · disabled</span>
+  <span class="dim">   Developer Workflow</span>
+   ◯ <span class="hl">release-tools</span>     <span class="dim">changelog + release notes (2.0.3)</span>
+
+  <span class="dim">─────────────────────────────────────────────────</span>
+   <span class="ok">✓ Approve &amp; install</span>        <span class="dim">enter here to run</span>
+
+ <span class="foot">↑↓ move · enter: select · tab: search · ↓ to the last row to approve</span></pre>
+  </div>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit config agents</span></div>
+<pre><span class="p">$</span> <span class="cmd">claude-kit config agents</span>
+
+<span class="sel">?</span> <span class="hl">Select agents</span>
+
+  <span class="dim">── Agents </span><span class="ok">(1 selected)</span><span class="dim"> ───────────────────────────</span>
+ <span class="sel">❯</span> <span class="ok">◉</span> <span class="hl">incident-lead</span>     <span class="dim">installed</span>
+   ◯ <span class="hl">migration-buddy</span>   <span class="dim">plans and executes schema migrations</span>
+
+  <span class="dim">─────────────────────────────────────────────────</span>
+   <span class="ok">✓ Approve &amp; install</span>        <span class="dim">enter here to run</span>
+
+ <span class="foot">↑↓ move · enter: select · tab: search · ↓ to the last row to approve</span></pre>
+  </div>
+
+  <div class="principle">
+    <b>Build note:</b> stock questionary checkboxes can't do type-to-filter, section headers with
+    live counters, or a sticky footer. The picker screen needs <b>prompt_toolkit</b> directly
+    (which questionary wraps) or <b>Textual</b>. Decide this before implementation starts — it's
+    the difference between a day and a week, and it only affects <b>ui/tui.py</b>; core/ is untouched.
+  </div>
+</section>
+
+<!-- ================= 3. UPDATE ================= -->
+<section id="update">
+  <div class="sec-head"><span class="sec-num">§3</span><h2>The daily command — <code>claude-kit update</code></h2></div>
+  <p>Pulls the catalog and syncs only what the user opted into. <b>Never interactive, never upgrades itself</b> — anything needing the user (a pending config, a newer CLI) is reported at the end, not prompted for.</p>
+
+  <h3><span class="tag">3a</span>Nothing new</h3>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit update</span></div>
+<pre><span class="p">$</span> <span class="cmd">claude-kit update</span>
+<span class="ok">✓</span> Catalog is up to date <span class="dim">(b7c2f01)</span>
+<span class="ok">✓</span> Nothing to sync — 2 skills, 2 tools, 2 MCPs all current
+
+<span class="dim">Done in 2.1s</span></pre>
+  </div>
+
+  <h3><span class="tag">3b</span>Content changed in the catalog</h3>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit update</span></div>
+<pre><span class="p">$</span> <span class="cmd">claude-kit update</span>
+<span class="ok">✓</span> Catalog synced <span class="dim">(b7c2f01 → c4e8a92)</span>
+
+Changes applied:
+  <span class="inf">↑</span> skill   <span class="hl">dr-runbooks</span>      updated
+  <span class="inf">↑</span> agent   <span class="hl">incident-lead</span>    updated
+  <span class="inf">↑</span> tool    <span class="hl">gitlab-cli</span>       1.1.0 → 1.2.0  <span class="dim">(install.sh — auth untouched)</span>
+  <span class="inf">↑</span> plugin  <span class="hl">org-standards</span>    1.2.0 → 1.3.0  <span class="dim">(marketplace refreshed — /reload-plugins)</span>
+  <span class="dim">=</span> mcp     <span class="hl">jira-internal</span>    <span class="dim">no change</span>
+
+<span class="wrn">⚠ 1 component pending configuration — run 'claude-kit config'</span>
+<span class="inf">ℹ</span> 2 new items available in the catalog — run <span class="hl">'claude-kit list'</span>
+
+<span class="dim">Done in 9.7s</span></pre>
+  </div>
+
+  <h3><span class="tag">3c</span>A newer CLI exists — notify only, the user upgrades</h3>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit update (newer CLI available)</span></div>
+<pre><span class="p">$</span> <span class="cmd">claude-kit update</span>
+<span class="inf">ℹ</span> A newer claude-kit exists <span class="dim">(0.4.0 → 0.5.0)</span>. When convenient, run:
+  <span class="hl">npm install -g claude-kit@latest</span>
+<span class="ok">✓</span> Catalog synced <span class="dim">(c4e8a92 → d1f7b30)</span>
+<span class="ok">✓</span> Nothing else to sync
+
+<span class="dim">Done in 3.4s</span></pre>
+  </div>
+  <p>The tool never replaces itself — upgrading is always an explicit user action via pip/Artifactory.</p>
+
+  <h3><span class="tag">3d</span>The seatbelt — catalog requires a newer CLI</h3>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit update (CLI too old)</span></div>
+<pre><span class="p">$</span> <span class="cmd">claude-kit update</span>
+<span class="err">✗ This catalog requires claude-kit >= 0.5.0 (you have 0.4.0).</span>
+  Content sync skipped to stay safe. Run:
+  <span class="hl">npm install -g claude-kit@latest</span>  <span class="dim">then 'claude-kit update' again.</span></pre>
+  </div>
+</section>
+
+<!-- ================= 4. ADD / REMOVE ================= -->
+<section id="add">
+  <div class="sec-head"><span class="sec-num">§4</span><h2>Fast path — <code>claude-kit add</code> / <code>remove</code></h2></div>
+  <p>For when you already know the exact name — scriptable, no selection screen, exits non-zero on failure. This is the CLI twin of the scoped picker (§2): <code>config skills</code> is for browsing, <code>add skill &lt;name&gt;</code> is for knowing. If the component has inputs or a config script, the configure step opens right after the install — same experience as <code>config</code>.</p>
+
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit add / remove</span></div>
+<pre><span class="p">$</span> <span class="cmd">claude-kit add skill k8s-debug</span>
+<span class="ok">✓</span> skill <span class="hl">k8s-debug</span> installed
+
+<span class="p">$</span> <span class="cmd">claude-kit add mcp jira-internal</span>
+<span class="ok">✓</span> mcp <span class="hl">jira-internal</span> 1.4.0 installed · mcp_config added to settings
+<span class="inf">━━ Configure: jira-internal ━━</span> <span class="dim">(auto-opened)</span>
+<span class="sel">?</span> Paste your Jira API token <span class="dim">(hidden)</span>: <span class="hl">********</span>
+  <span class="ok">✓</span> configured · <span class="ok">✓ verified</span>
+
+<span class="p">$</span> <span class="cmd">claude-kit remove mcp jira-internal</span>
+<span class="ok">✓</span> mcp <span class="hl">jira-internal</span> removed from claude_settings.json
+  <span class="ok">✓</span> uninstall.sh ran <span class="dim">(package removed)</span>
+  <span class="dim">(secret file in env.d/ deleted; other settings untouched)</span>
+
+<span class="p">$</span> <span class="cmd">claude-kit remove tool graphify</span>
+<span class="ok">✓</span> tool <span class="hl">graphify</span> uninstalled <span class="dim">(uninstall.sh, 3s)</span> · removed from installed.json
+
+<span class="p">$</span> <span class="cmd">claude-kit remove skill dr-runbooks</span>
+<span class="ok">✓</span> skill <span class="hl">dr-runbooks</span> removed from ~/.claude/skills/
+
+<span class="p">$</span> <span class="cmd">claude-kit add agent incident-lead</span>
+<span class="ok">✓</span> agent <span class="hl">incident-lead</span> copied to ~/.claude/agents/
+
+<span class="p">$</span> <span class="cmd">claude-kit add plugin release-tools</span>
+<span class="ok">✓</span> plugin <span class="hl">release-tools</span> 2.0.3 installed <span class="dim">(claude plugin install release-tools@base-kit)</span>
+  <span class="dim">run /reload-plugins in Claude Code to pick it up</span>
+
+<span class="p">$</span> <span class="cmd">claude-kit remove tool legacy-thing</span>
+<span class="ok">✓</span> tool <span class="hl">legacy-thing</span> removed from installed.json
+<span class="wrn">⚠ no uninstall.sh in the catalog — the binary was left on your PATH.</span>
+  <span class="dim">claude-kit only removes what it owns; remove it yourself if you want it gone.</span>
+
+<span class="p">$</span> <span class="cmd">claude-kit add skill k8s-debgu</span>
+<span class="err">✗ Unknown skill 'k8s-debgu'.</span> Did you mean <span class="hl">'k8s-debug'</span>?
+  Run <span class="hl">'claude-kit list'</span> to see available components.</pre>
+  </div>
+</section>
+
+<!-- ================= 5. LIST ================= -->
+<section id="list">
+  <div class="sec-head"><span class="sec-num">§5</span><h2>What exists vs what I have — <code>claude-kit list</code></h2></div>
+
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit list</span></div>
+<pre><span class="p">$</span> <span class="cmd">claude-kit list</span>
+
+<span class="hl">SKILLS</span>
+  <span class="dim">Name                Source       Installed   Description</span>
+  <span class="hl">dr-runbooks</span>         <span class="inf">claude-kit</span>   <span class="ok">✓</span>           Disaster recovery runbooks
+  <span class="hl">code-reviewer</span>       <span class="inf">claude-kit</span>   <span class="ok">✓</span>           PR review: style, security, tests
+  <span class="hl">my-scratch-notes</span>    <span class="inf">user</span>         <span class="ok">✓</span>           (added manually, left alone)
+
+<span class="hl">AGENTS</span>
+  <span class="dim">Name             Source       Installed   Description</span>
+  <span class="hl">incident-lead</span>    <span class="inf">claude-kit</span>   <span class="ok">✓</span>           Drives an incident end to end
+
+<span class="hl">PLUGINS</span>       <span class="dim">marketplace: base-kit</span>
+  <span class="dim">Name            Registry   Installed   State</span>
+  <span class="hl">org-standards</span>   1.2.0      1.2.0 <span class="ok">✓</span>     <span class="ok">enabled</span>
+  <span class="hl">python-lsp</span>      0.4.1      0.4.1 <span class="ok">✓</span>     <span class="wrn">disabled</span>
+  <span class="hl">release-tools</span>   2.0.3      <span class="dim">—</span>           <span class="dim">not installed</span>
+
+<span class="hl">TOOLS</span>
+  <span class="dim">Name         Registry   Installed   Config</span>
+  <span class="hl">graphify</span>     0.9.2      0.9.2 <span class="ok">✓</span>     <span class="dim">n/a</span>
+  <span class="hl">gitlab-cli</span>   1.2.0      1.2.0 <span class="ok">✓</span>     <span class="wrn">pending</span>
+
+<span class="hl">MCP SERVERS</span>
+  <span class="dim">Name            Enabled   Config</span>
+  <span class="hl">jira-internal</span>   <span class="ok">✓</span>         <span class="ok">done</span>
+  <span class="hl">docs-internal</span>   <span class="ok">✓</span>         <span class="dim">n/a</span>
+
+<span class="dim">3 skills, 1 agent, 2 plugins, 2 tools, 2 MCPs installed · 1 config pending</span></pre>
+  </div>
+</section>
+
+<!-- ================= 6. VERSION ================= -->
+<section id="version">
+  <div class="sec-head"><span class="sec-num">§6</span><h2>Support &amp; debugging — <code>claude-kit --version</code></h2></div>
+  <p>The first thing to ask for in any support conversation.</p>
+
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude-kit --version</span></div>
+<pre><span class="p">$</span> <span class="cmd">claude-kit --version</span>
+claude-kit  <span class="hl">0.4.0</span>
+catalog     <span class="hl">d1f7b30</span> <span class="dim">(2026-07-10, 'add docs-internal mcp')</span>
+python      <span class="hl">3.12.4</span></pre>
+  </div>
+</section>
+
+<!-- ================= 7. UNDER THE HOOD ================= -->
+<section id="internals">
+  <div class="sec-head"><span class="sec-num">§7</span><h2>Under the hood</h2></div>
+
+  <h3>Five types, three handlers — the type list is data</h3>
+  <p>The registry declares the types; the CLI only knows <b>handlers</b>. Five types today share three handlers, so most of what looks like five code paths is one:</p>
+  <table>
+    <thead>
+      <tr><th>Type</th><th>Handler</th><th>What install means</th><th>What remove means</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><b>skills</b></td><td rowspan="2" style="vertical-align:middle"><code>content</code></td><td>copy <code>skills/&lt;name&gt;/</code> → <code>~/.claude/skills/</code></td><td rowspan="2" style="vertical-align:middle">delete the copied files</td></tr>
+      <tr><td><b>agents</b></td><td>copy <code>agents/&lt;name&gt;.md</code> → <code>~/.claude/agents/</code></td></tr>
+      <tr><td><b>plugins</b></td><td><code>marketplace</code></td><td><code>claude plugin install &lt;name&gt;@base-kit --scope user</code></td><td><code>claude plugin uninstall</code></td></tr>
+      <tr><td><b>tools</b></td><td rowspan="2" style="vertical-align:middle"><code>script</code></td><td>install.sh → inputs → config.sh → verify.sh</td><td rowspan="2" style="vertical-align:middle">uninstall.sh, if declared</td></tr>
+      <tr><td><b>mcps</b></td><td>same, plus <code>mcp_config</code> injected into settings</td></tr>
+    </tbody>
+  </table>
+  <p><b>A sixth type is a catalog edit, not a CLI release</b>, as long as it maps to an existing handler. Picker, Configure, <code>config</code>, <code>add</code>/<code>remove</code> and <code>list</code> all read the type list from the registry. Only a genuinely new installation <i>mechanism</i> needs new code.</p>
+
+  <h3>Optional scripts, per script-handled type</h3>
+  <table>
+    <thead>
+      <tr><th>Type</th><th style="text-align:center">install.sh</th><th style="text-align:center">config.sh</th><th style="text-align:center">verify.sh</th><th style="text-align:center">uninstall.sh</th><th style="text-align:center">inputs</th><th style="text-align:center">mcp_config</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><b>Skill / Agent</b></td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td class="c">—</td></tr>
+      <tr><td><b>Plugin</b></td><td class="c">— <span style="font-size:11px">(Claude Code<br>installs it)</span></td><td class="c">—</td><td class="c">optional</td><td class="c">—</td><td class="c">—</td><td class="c">— <span style="font-size:11px">(may ship its own<br>.mcp.json)</span></td></tr>
+      <tr><td><b>Tool</b></td><td class="c">usually</td><td class="c">if auth needed</td><td class="c">recommended</td><td class="c">recommended</td><td class="c">if needed</td><td class="c">—</td></tr>
+      <tr><td><b>MCP</b></td><td class="c">usually (from Artifactory,<br>never npx-at-launch)</td><td class="c">if auth needed</td><td class="c">recommended</td><td class="c">if it installed<br>a package</td><td class="c">if needed</td><td class="c"><b>always</b> — injected<br>into settings.json</td></tr>
+    </tbody>
+  </table>
+  <div class="principle">
+    <b>Two rules the CI gate must enforce now that plugins exist.</b> A plugin can bundle its own MCP servers, so
+    (1) a capability is delivered <b>either</b> as an <code>mcps</code> component <b>or</b> by a plugin, never both — otherwise
+    a user ends up with two Jira servers in one session; and (2) no catalog plugin may declare an <code>.mcp.json</code>
+    that fetches at launch, which would smuggle <code>npx</code>-at-startup past the guarantee we make for our own MCPs.
+  </div>
+  <p>The CLI's loop is identical for every component: run <code>install.sh</code> if present → collect <code>inputs</code> (masked when sensitive) → run <code>config.sh</code> with inputs as <b>env vars</b> → inject <code>mcp_config</code> if present → run <code>verify.sh</code>. Removal is the mirror image: strip <code>mcp_config</code> from settings → run <code>uninstall.sh</code> if present → delete the secret file → drop the entry from <code>installed.json</code>. All per-program weirdness lives in the scripts, in the catalog, reviewed like any content.</p>
+  <p><code>uninstall.sh</code> is optional. Without it, removal cleans up only what claude-kit owns — settings entry, secret file, state — and says so rather than pretending the binary is gone.</p>
+
+  <h3>What each command touches</h3>
+  <table>
+    <thead>
+      <tr><th>Command</th><th style="text-align:center">Artifactory</th><th style="text-align:center">~/.claude-kit-repo</th><th style="text-align:center">installed.json</th><th style="text-align:center">env.d/ (secrets)</th><th style="text-align:center">~/.claude/</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>init</code></td><td class="c">—</td><td class="c">clone<br>+ register as marketplace</td><td class="c">create</td><td class="c">—</td><td class="c">baseline</td></tr>
+      <tr><td><code>config</code> <span style="font-size:12px;color:var(--ink-soft)">(incl. scoped)</span></td><td class="c">via install.sh</td><td class="c">read</td><td class="c">write</td><td class="c">via config.sh</td><td class="c">write</td></tr>
+      <tr><td><code>update</code></td><td class="c">version check<br>(notify only)</td><td class="c">pull</td><td class="c">read+write</td><td class="c">never</td><td class="c">write</td></tr>
+      <tr><td><code>add / remove</code></td><td class="c">via install.sh</td><td class="c">read</td><td class="c">write</td><td class="c">via config.sh</td><td class="c">write</td></tr>
+      <tr><td><code>list</code></td><td class="c">—</td><td class="c">read</td><td class="c">read</td><td class="c">—</td><td class="c">—</td></tr>
+      <tr><td><code>check</code></td><td class="c">version check<br>(read only)</td><td class="c">fetch<br>(no merge)</td><td class="c">read</td><td class="c">—</td><td class="c">—</td></tr>
+      <tr><td><code>--version</code></td><td class="c">—</td><td class="c">read</td><td class="c">—</td><td class="c">—</td><td class="c">—</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Guarantees the user can rely on</h3>
+  <ul class="guar">
+    <li><b>Settings are sacred:</b> in <code>claude_settings.json</code>, only the <code>mcpServers</code> block is ever managed; everything else is preserved byte-for-byte.</li>
+    <li><b>Nothing runs until you approve:</b> selecting and unselecting only changes the list. The single <b>Approve &amp; install</b> row at the very bottom is the only thing that acts, and pending removals are flagged in red on their own rows above it.</li>
+    <li><b>Secrets are never stored by Base-Kit:</b> inputs go to <code>config.sh</code> as env vars, land in their target (tool config or <code>env.d/</code>, chmod 600), and are forgotten. <code>installed.json</code> records only <code>"&lt;set&gt;"</code> and a timestamp.</li>
+    <li><b>Auth survives upgrades:</b> <code>update</code> re-runs install scripts, never config — credentials stay put.</li>
+    <li><b>The CLI never upgrades itself:</b> it only notifies; <code>npm install -g claude-kit@latest</code> is always the user's explicit action.</li>
+    <li><b>Your CLAUDE.md is never rewritten:</b> the org baseline is a separate file (<code>genie-claude.md</code>); your own file gains one <code>@</code>-reference line and nothing else — ever.</li>
+    <li><b>Nothing external is required to have a working setup:</b> skills and agents are files in our own catalog, plugins are vendored into it, MCP packages come from Artifactory. Every component installs from one <code>git clone</code> — an outside hub can be added as an extra source, never as a dependency.</li>
+    <li><b>Every component remembers where it came from:</b> <code>installed.json</code> records each entry's <code>source</code>, so <code>update</code> refreshes it through the right channel — ours from the catalog, externally-sourced ones through their source, manually-added ones left alone.</li>
+    <li><b>Opt-in only:</b> nothing new is ever installed without the user selecting it.</li>
+    <li><b><code>update</code> never prompts:</b> anything needing input becomes a pending item, reported at the end.</li>
+    <li><b>Idempotent:</b> running any command twice in a row is always safe.</li>
+  </ul>
+
+  <h3>The architecture rule that keeps the future open</h3>
+  <div class="principle">
+    <b>core/ never talks to a human.</b> No print, no prompt, no exit. Core functions take
+    inputs and return objects (or raise typed exceptions) — <em>all</em> rendering and asking
+    lives in the frontends: <b>commands/</b> (CLI), <b>ui/tui.py</b> (screens), and later
+    <b>web/</b> (local Flask UI). The picker, the approve row and the scoped filters are all
+    frontend work — the counters and removal flags are just a render of
+    <code>core.plan(state, registry, selections) -&gt; ChangePlan</code>, which the future web UI
+    will render as a page instead of a list.
+  </div>
+
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">core/plan.py + core/configure.py — the shape of every core module</span></div>
+<pre><span class="sel">def</span> <span class="inf">plan</span>(state, registry, selections) -> <span class="hl">ChangePlan</span>:
+    <span class="dim"># pure read: diff of installs/removals + what will need configuring</span>
+    <span class="dim"># drives the section counters and the red 'will be removed' flags</span>
+
+<span class="sel">def</span> <span class="inf">apply</span>(plan: ChangePlan) -> <span class="hl">list[ApplyResult]</span>:
+    <span class="dim"># what the Approve row calls — installs, removals, mcp_config injection</span>
+
+<span class="sel">def</span> <span class="inf">pending</span>(state, registry) -> <span class="hl">list[ConfigStep]</span>:
+    <span class="dim"># pure read: which components need configuring, with their input forms</span>
+
+<span class="sel">def</span> <span class="inf">submit</span>(step: ConfigStep, answers: dict) -> <span class="hl">VerifyResult</span>:
+    <span class="dim"># runs config.sh with answers as env vars, then verify.sh,</span>
+    <span class="dim"># updates status — returns a result object; NEVER prints, NEVER prompts</span>
+
+<span class="dim"># the TUI renders these with prompt_toolkit;</span>
+<span class="dim"># the future web UI maps them to routes:</span>
+<span class="dim">#   POST /api/plan        GET  /api/config/pending</span>
+<span class="dim">#   POST /api/apply       POST /api/config/&lt;name&gt;/submit</span></pre>
+  </div>
+</section>
+
+<!-- ================= 8. NOTIFICATIONS ================= -->
+<section id="notify">
+  <div class="sec-head"><span class="sec-num">§8</span><h2>Telling the user there's an update</h2></div>
+  <p>A <code>SessionStart</code> hook shows a one-line banner when Claude Code opens. The hook never checks anything — it reads a file written earlier by <code>claude-kit check</code>, so startup is never delayed.</p>
+
+  <table>
+    <thead><tr><th>Piece</th><th>Job</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td><code>claude-kit check</code></td><td>runs the network checks, <b>writes</b> <code>state.json</code></td><td>seconds — in the background</td></tr>
+      <tr><td>the hook</td><td><b>reads</b> <code>state.json</code>, prints a banner</td><td>instant</td></tr>
+      <tr><td><code>claude-kit update</code></td><td>does the work, <b>clears</b> <code>state.json</code></td><td>when the user runs it</td></tr>
+    </tbody>
+  </table>
+
+  <p>The hook shows what's already known, then spawns the next check <b>detached</b> — so the banner is at most one check old, and the session never waits:</p>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">plugins/claude-kit-notify/hooks/session-start.sh</span></div>
+<pre><span class="dim">#!/bin/bash</span>
+<span class="dim"># 1. say what we already know — instant, no network</span>
+msg=$(jq -r <span class="hl">'.message // empty'</span> ~/.claude-kit/state.json 2&gt;/dev/null)
+[ -n <span class="hl">"$msg"</span> ] &amp;&amp; jq -nc --arg m <span class="hl">"$msg"</span> <span class="hl">'{systemMessage: $m}'</span>
+
+<span class="dim"># 2. refresh for next time — detached, never blocks startup</span>
+( claude-kit check --quiet &gt;/dev/null 2&gt;&amp;1 &amp; )
+<span class="sel">exit</span> 0</pre>
+  </div>
+  <p>It ships as a plugin (<code>claude-kit-notify</code>), not as a settings edit — so claude-kit doesn't touch <code>settings.json</code>, and the user can turn it off with <code>/plugin disable</code>.</p>
+
+  <h3>What the user sees</h3>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">yonatan@dev: ~ — claude (session start)</span></div>
+<pre><span class="wrn">⬆ catalog has 3 updates · 1 config pending — run 'claude-kit update'</span>
+
+<span class="dim">other launches, each shown once and only once:</span>
+<span class="wrn">⬆ claude-kit 0.5.0 available — run 'npm install -g claude-kit@latest'</span>
+<span class="wrn">⬆ Claude Code 2.2.0 available — run 'npm i -g @anthropic-ai/claude-code@latest'</span>
+
+<span class="dim">nothing new → the hook prints nothing at all</span></pre>
+  </div>
+  <p>Every line names the exact command to run — <code>update</code> still never acts on its own. <code>announced</code> records what was already shown, so a version is mentioned once rather than every session until the user acts.</p>
+
+  <h3><code>~/.claude-kit/state.json</code></h3>
+  <div class="term">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">~/.claude-kit/state.json</span></div>
+<pre>{
+  <span class="inf">"notice_version"</span>: 1,
+  <span class="inf">"checked_at"</span>: <span class="hl">"2026-07-28T08:02:11Z"</span>,
+  <span class="inf">"check_interval_hours"</span>: 24,
+
+  <span class="inf">"message"</span>: <span class="hl">"⬆ catalog has 3 updates · 1 config pending — run 'claude-kit update'"</span>,
+
+  <span class="inf">"findings"</span>: {
+    <span class="inf">"catalog"</span>:        { <span class="inf">"local_commit"</span>: <span class="hl">"b7c2f01"</span>, <span class="inf">"remote_commit"</span>: <span class="hl">"d1f7b30"</span>,
+                        <span class="inf">"behind_by"</span>: 3, <span class="inf">"action"</span>: <span class="hl">"claude-kit update"</span> },
+    <span class="inf">"claude_kit_cli"</span>: { <span class="inf">"installed"</span>: <span class="hl">"0.4.0"</span>, <span class="inf">"available"</span>: <span class="hl">"0.5.0"</span>,
+                        <span class="inf">"action"</span>: <span class="hl">"npm install -g claude-kit@latest"</span> },
+    <span class="inf">"claude_code"</span>:    { <span class="inf">"installed"</span>: <span class="hl">"2.1.3"</span>, <span class="inf">"available"</span>: <span class="hl">"2.2.0"</span>,
+                        <span class="inf">"action"</span>: <span class="hl">"npm install -g @anthropic-ai/claude-code@latest"</span> },
+    <span class="inf">"pending_config"</span>: { <span class="inf">"count"</span>: 1, <span class="inf">"components"</span>: [<span class="hl">"gitlab-cli"</span>],
+                        <span class="inf">"action"</span>: <span class="hl">"claude-kit config"</span> }
+  },
+
+  <span class="inf">"announced"</span>: {
+    <span class="inf">"claude_kit_cli"</span>: <span class="hl">"0.5.0"</span>,
+    <span class="inf">"claude_code"</span>: <span class="hl">"2.2.0"</span>,
+    <span class="inf">"catalog_commit"</span>: <span class="hl">"c4e8a92"</span>
+  }
+}</pre>
+  </div>
+  <p>Here the CLI and Claude Code upgrades were already announced, so only the catalog and pending config reach <code>message</code>. <code>core/notice.py</code> computes all of this and returns a <code>Notice</code>; the hook is just one more frontend rendering it.</p>
+</section>
+
+<footer>
+  <span>Base-Kit · claude-kit-cli + base-kit-catalog</span>
+  <span>mockup — target UX</span>
+</footer>
+
+</div>
+</body>
+</html>
