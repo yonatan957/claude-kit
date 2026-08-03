@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from src.core.state_model import CategoryName, Component, ScriptConfig, ScriptEntry
-from src.installers.secrets import delete_secret_file, write_secret_file
+from src.installers.secrets import delete_secret_file, read_secret_file, write_secret_file
 from src.installers.settings_patch import get_mcp_servers, patch_mcp_servers
 
 
@@ -110,17 +110,19 @@ def install_script_component(
         if result.returncode != 0:
             raise ScriptInstallError(f"{category}.{name}: install.sh failed: {result.stderr.strip()}")
 
-    # Persist secret answers to a restricted per-component file so they can be
-    # reused (never re-prompted) on the next `update` (research.md #7).
-    secret_names = sorted(i.name for i in component.inputs if i.secret)
-    secret_path = env_dir / f"{name}.env"
-    if secret_names:
+    # Persist *every* declared answer (not just secret: true ones) to a
+    # restricted per-component file — installed.json can only ever hold the
+    # "<set>" placeholder (FR-039), so this is the only place `update` can
+    # recover any input's real value to re-run config.sh without re-prompting
+    # (research.md #7). Keyed by the input's own declared name, not the
+    # derived env var name, so it's read back unambiguously.
+    if component.inputs:
         env_file_contents = "\n".join(
-            f"{_env_var_name(input_name)}={answers[input_name]}"
-            for input_name in secret_names
-            if input_name in answers
+            f"{input_def.name}={answers[input_def.name]}"
+            for input_def in component.inputs
+            if input_def.name in answers
         )
-        write_secret_file(secret_path, env_file_contents + "\n")
+        write_secret_file(env_dir / f"{name}.env", env_file_contents + "\n")
 
     env_vars = {_env_var_name(k): v for k, v in answers.items()}
     config_script = _lifecycle_script(component_dir, "config.sh")
@@ -158,6 +160,21 @@ def install_script_component(
             answers={k: "<set>" for k in answers},
         ),
     )
+
+
+def load_stored_answers(name: str, env_dir: Path) -> dict[str, str]:
+    """Read back a component's persisted answers, keyed by input name, for
+    reuse during `update` without re-prompting (research.md #7)."""
+    contents = read_secret_file(env_dir / f"{name}.env")
+    if contents is None:
+        return {}
+    answers: dict[str, str] = {}
+    for line in contents.splitlines():
+        if not line or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        answers[key] = value
+    return answers
 
 
 def remove_script_component(
