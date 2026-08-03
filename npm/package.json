@@ -1,0 +1,16 @@
+{
+  "name": "claude-kit",
+  "version": "0.1.0",
+  "description": "Component manager for Claude Code — Skills, Agents, Plugins, Tools, and MCP servers",
+  "bin": {
+    "claude-kit": "bin/claude-kit.js"
+  },
+  "scripts": {
+    "postinstall": "node postinstall.js"
+  },
+  "os": ["darwin", "linux", "win32"],
+  "engines": {
+    "node": ">=16"
+  },
+  "license": "MIT"
+}
