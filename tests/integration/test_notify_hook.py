@@ -5,6 +5,7 @@ FR-031)."""
 import importlib
 import json
 import sys
+from datetime import UTC, datetime, timedelta
 
 from src.notify import hook
 
@@ -57,3 +58,45 @@ def test_hook_module_imports_no_core_or_installers():
     forbidden = [m for m in new_modules if m.startswith(forbidden_prefixes)]
     assert forbidden == []
     assert "socket" not in new_modules
+
+
+def test_should_launch_check_when_no_prior_state():
+    assert hook._should_launch_check(None) is True
+
+
+def test_should_not_launch_check_within_interval():
+    recent = (datetime.now(UTC) - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+    data = {"checked_at": recent, "check_interval_hours": 6}
+
+    assert hook._should_launch_check(data) is False
+
+
+def test_should_launch_check_after_interval_elapsed():
+    stale = (datetime.now(UTC) - timedelta(hours=7)).isoformat().replace("+00:00", "Z")
+    data = {"checked_at": stale, "check_interval_hours": 6}
+
+    assert hook._should_launch_check(data) is True
+
+
+def test_main_prints_and_conditionally_launches(tmp_path, monkeypatch, capsys):
+    state_path = tmp_path / "state.json"
+    recent = (datetime.now(UTC) - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+    state_path.write_text(
+        json.dumps(
+            {
+                "notice_version": "1",
+                "checked_at": recent,
+                "check_interval_hours": 6,
+                "message": "claude-kit: something worth knowing",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(hook, "_state_json_path", lambda: state_path)
+    launched = []
+    monkeypatch.setattr(hook, "launch_detached_check", lambda: launched.append(True))
+
+    hook.main()
+
+    assert capsys.readouterr().out == "claude-kit: something worth knowing\n"
+    assert launched == []  # still within check_interval_hours, so not relaunched
