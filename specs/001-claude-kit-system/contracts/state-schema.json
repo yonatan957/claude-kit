@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "claude-kit state.json (Notification Snapshot)",
+  "type": "object",
+  "required": ["notice_version", "checked_at", "check_interval_hours", "findings", "announced"],
+  "properties": {
+    "notice_version": { "type": "string" },
+    "checked_at": { "type": "string", "format": "date-time" },
+    "check_interval_hours": { "type": "number", "minimum": 0 },
+    "message": { "type": ["string", "null"] },
+    "findings": {
+      "type": "object",
+      "properties": {
+        "local_commit": { "type": "string" },
+        "remote_commit": { "type": "string" },
+        "local_cli_version": { "type": "string" },
+        "latest_cli_version": { "type": "string" },
+        "pending_config_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "announced": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

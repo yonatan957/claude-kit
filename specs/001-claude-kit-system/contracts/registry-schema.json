@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "claude-kit registry.json (Catalog)",
+  "type": "object",
+  "required": ["schema_version", "version", "min_cli_version", "types", "plugin_marketplace"],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "version": { "type": "string" },
+    "min_cli_version": { "type": "string" },
+    "types": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "handler"],
+        "properties": {
+          "name": { "type": "string", "enum": ["skills", "agents", "plugins", "tools", "mcps"] },
+          "handler": { "type": "string", "enum": ["content", "script", "marketplace"] }
+        }
+      }
+    },
+    "plugin_marketplace": {
+      "type": "object",
+      "required": ["add", "install", "update", "remove"],
+      "properties": {
+        "add": { "type": "string" },
+        "install": { "type": "string" },
+        "update": { "type": "string" },
+        "remove": { "type": "string" }
+      }
+    },
+    "skills": { "$ref": "#/definitions/componentMap" },
+    "agents": { "$ref": "#/definitions/componentMap" },
+    "plugins": { "$ref": "#/definitions/componentMap" },
+    "tools": { "$ref": "#/definitions/componentMap" },
+    "mcps": { "$ref": "#/definitions/componentMap" }
+  },
+  "definitions": {
+    "componentMap": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/component" }
+    },
+    "component": {
+      "type": "object",
+      "required": ["description", "handler", "version"],
+      "properties": {
+        "description": { "type": "string" },
+        "handler": { "type": "string", "enum": ["content", "script", "marketplace"] },
+        "version": { "type": "string" },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "hash"],
+            "properties": {
+              "path": { "type": "string" },
+              "hash": { "type": "string" }
+            }
+          }
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "label", "secret"],
+            "properties": {
+              "name": { "type": "string" },
+              "label": { "type": "string" },
+              "secret": { "type": "boolean" }
+            }
+          }
+        },
+        "mcp_config": { "type": ["object", "null"] }
+      }
+    }
+  }
+}
