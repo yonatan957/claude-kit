@@ -283,11 +283,11 @@ python -c "import pathlib;[print(len(p.read_text(encoding='utf-8').splitlines())
 
 ## Phase 13: Phase 2 Polish & Cross-Cutting
 
-- [ ] T094 [P] Update `README.md`'s command-surface section for the new picker key model (`Tab` search toggle, `Enter` select/approve, no `a`, no `Space`) and for `list` now showing only installed components
-- [ ] T095 [P] Re-run quickstart.md's Story 1 walkthrough in a real terminal and confirm each newly added assertion: inline rendering with scrollback intact, marker stability while moving the cursor, `Tab`-only search entry/exit, `a`/`Space` being inert, and approval only via the bottom row (validates FR-045/FR-046/FR-047/SC-010)
-- [ ] T096 [P] Re-run quickstart.md's Story 4 walkthrough and confirm all three `list` cases: installed-only output, the orphaned component rendering `unknown`, and the empty state exiting `0`
-- [ ] T097 Re-run the full suite (`pytest`) plus `ruff check src tests` and `black --check src tests`, and confirm `tests/contract/test_file_line_limit.py` passes with the allowlist unchanged (depends on all prior Phase 2 tasks)
-- [ ] T098 Run the full-system idempotency pass (`tests/integration/test_full_idempotency.py`) to confirm the TUI and `list` changes did not disturb Principle IV (depends on T097)
+- [X] T094 [P] Update `README.md`'s command-surface section for the new picker key model (`Tab` search toggle, `Enter` select/approve, no `a`, no `Space`) and for `list` now showing only installed components
+- [ ] T095 [P] ⚠️ NEEDS HUMAN VERIFICATION (agent cannot allocate a TTY; the automatable assertions are covered by `tests/integration/test_tui_inline.py`) — Re-run quickstart.md's Story 1 walkthrough in a real terminal and confirm each newly added assertion: inline rendering with scrollback intact, marker stability while moving the cursor, `Tab`-only search entry/exit, `a`/`Space` being inert, and approval only via the bottom row (validates FR-045/FR-046/FR-047/SC-010)
+- [X] T096 [P] Re-run quickstart.md's Story 4 walkthrough and confirm all three `list` cases: installed-only output, the orphaned component rendering `unknown`, and the empty state exiting `0`
+- [X] T097 Re-run the full suite (`pytest`) plus `ruff check src tests` and `black --check src tests`, and confirm `tests/contract/test_file_line_limit.py` passes with the allowlist unchanged (depends on all prior Phase 2 tasks)
+- [X] T098 Run the full-system idempotency pass (`tests/integration/test_full_idempotency.py`) to confirm the TUI and `list` changes did not disturb Principle IV (depends on T097)
 
 **Checkpoint**: Phase 2 refinement complete; Principles I–V still green and Principle VI green for every file this phase touched
 
