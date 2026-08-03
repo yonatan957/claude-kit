@@ -105,7 +105,7 @@ npm/
 - [X] T035 [P] [US2] Integration test: `claude-kit add <type> <name>` installs with no picker shown, drives Step 2 configure prompts when inputs are required, and exits `0` in `tests/integration/test_add.py`
 - [X] T036 [P] [US2] Integration test: `claude-kit remove <type> <name>` removes all files/registrations and is a no-op success (exit `0`) when run a second time in `tests/integration/test_remove.py`
 - [X] T037 [P] [US2] Integration test: add/remove failures (unknown name, failing lifecycle script) exit non-zero with a clear message and leave no partial/unlabeled state in `tests/integration/test_add_remove_failures.py`
-- [ ] T037B [P] [US2] Integration test: `claude-kit add <type> <name>` on a name colliding with an existing `"user"`-sourced entry is refused without explicit, distinct confirmation in `tests/integration/test_add_naming_collision.py`
+- [X] T037B [P] [US2] Integration test: `claude-kit add <type> <name>` on a name colliding with an existing `"user"`-sourced entry is refused without explicit, distinct confirmation in `tests/integration/test_add_naming_collision.py`
 
 ### Implementation for User Story 2
 
