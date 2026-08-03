@@ -40,7 +40,11 @@ def test_hook_prints_nothing_when_state_json_is_missing(tmp_path, monkeypatch, c
     assert capsys.readouterr().out == ""
 
 
-def test_hook_module_imports_no_core_installers_network_or_git():
+def test_hook_module_imports_no_core_or_installers():
+    """subprocess IS imported (needed for the detached check launch, T058)
+    but it is process management, not itself a network/git call — the
+    forbidden set is specifically core/ and installers/, whose import graphs
+    reach network/git/filesystem work synchronously."""
     for mod_name in [m for m in list(sys.modules) if m.startswith("src.notify")]:
         del sys.modules[mod_name]
 
@@ -52,5 +56,4 @@ def test_hook_module_imports_no_core_installers_network_or_git():
     forbidden_prefixes = ("src.core", "src.installers")
     forbidden = [m for m in new_modules if m.startswith(forbidden_prefixes)]
     assert forbidden == []
-    assert "subprocess" not in new_modules
     assert "socket" not in new_modules
