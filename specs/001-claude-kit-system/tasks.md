@@ -43,15 +43,15 @@ npm/
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 [P] Implement local path constants/resolvers (`~/.claude-kit/`, `~/.claude-kit-repo/`, `~/.claude/skills/`, `~/.claude/agents/`, `claude_settings.json`, `CLAUDE.md`, `~/.claude-kit/env.d/`) in `src/core/paths.py`
-- [ ] T006 [P] Implement Pydantic v2 models for all three JSON engines (`registry.json`, `installed.json`, `state.json`) per data-model.md's field tables in `src/core/state_model.py`
-- [ ] T007 Implement registry parsing/validation and the `min_cli_version` comparison gate (FR-022) in `src/core/registry.py` (depends on T006)
-- [ ] T008 Implement diff computation — desired selection vs. `installed.json` → add/remove/update plan — in `src/core/diffing.py` (depends on T006)
-- [ ] T009 [P] Implement catalog sync via system `git` (`clone`/`pull` into `~/.claude-kit-repo`, per research.md #5) in `src/installers/catalog_sync.py` (depends on T005)
-- [ ] T010 Create the Typer CLI app skeleton wiring empty `init`/`config`/`update`/`add`/`remove`/`list`/`check` subcommands in `src/cli.py` (depends on T007)
-- [ ] T011 [P] Contract test: validate the fixture `registry.json` against `contracts/registry-schema.json` in `tests/contract/test_registry_schema.py`
-- [ ] T012 [P] Contract test: validate a generated `installed.json` shape against `contracts/installed-schema.json` in `tests/contract/test_installed_schema.py`
-- [ ] T013 [P] Contract test: validate a generated `state.json` shape against `contracts/state-schema.json` in `tests/contract/test_state_schema.py`
+- [X] T005 [P] Implement local path constants/resolvers (`~/.claude-kit/`, `~/.claude-kit-repo/`, `~/.claude/skills/`, `~/.claude/agents/`, `claude_settings.json`, `CLAUDE.md`, `~/.claude-kit/env.d/`) in `src/core/paths.py`
+- [X] T006 [P] Implement Pydantic v2 models for all three JSON engines (`registry.json`, `installed.json`, `state.json`) per data-model.md's field tables in `src/core/state_model.py`
+- [X] T007 Implement registry parsing/validation and the `min_cli_version` comparison gate (FR-022) in `src/core/registry.py` (depends on T006)
+- [X] T008 Implement diff computation — desired selection vs. `installed.json` → add/remove/update plan — in `src/core/diffing.py` (depends on T006)
+- [X] T009 [P] Implement catalog sync via system `git` (`clone`/`pull` into `~/.claude-kit-repo`, per research.md #5) in `src/installers/catalog_sync.py` (depends on T005)
+- [X] T010 Create the Typer CLI app skeleton wiring empty `init`/`config`/`update`/`add`/`remove`/`list`/`check` subcommands in `src/cli.py` (depends on T007)
+- [X] T011 [P] Contract test: validate the fixture `registry.json` against `contracts/registry-schema.json` in `tests/contract/test_registry_schema.py`
+- [X] T012 [P] Contract test: validate a generated `installed.json` shape against `contracts/installed-schema.json` in `tests/contract/test_installed_schema.py`
+- [X] T013 [P] Contract test: validate a generated `state.json` shape against `contracts/state-schema.json` in `tests/contract/test_state_schema.py`
 - [ ] T014 [P] Unit tests for `src/core/registry.py` (handler validation, `min_cli_version` gate) in `tests/unit/test_registry.py`
 - [ ] T015 [P] Unit tests for `src/core/diffing.py` (add/remove/update plan correctness) in `tests/unit/test_diffing.py`
 
