@@ -24,6 +24,7 @@ class PickerEntry:
     currently_installed: bool
     selected: bool
     pinned: bool = False
+    naming_collision: bool = False  # FR-043: an existing "user"-sourced item shares this name
 
     @property
     def pending_removal(self) -> bool:
@@ -61,11 +62,13 @@ class PickerApp(App[dict[str, set[str]] | None]):
         registry: Registry,
         installed: InstalledRecord,
         category_filter: CategoryName | None = None,
+        naming_collisions: dict[str, set[str]] | None = None,
     ) -> None:
         super().__init__()
         self.registry = registry
         self.installed = installed
         self.category_filter = category_filter
+        self.naming_collisions = naming_collisions or {}
         self.entries: list[PickerEntry] = self._build_entries()
         self.cancelled = False
 
@@ -75,6 +78,7 @@ class PickerApp(App[dict[str, set[str]] | None]):
         categories = (self.category_filter,) if self.category_filter else _CATEGORIES
         for category in categories:
             installed_names = set(getattr(self.installed, category).keys())
+            colliding_names = self.naming_collisions.get(category, set())
             for name, component in components_by_category[category].items():
                 entries.append(
                     PickerEntry(
@@ -83,6 +87,7 @@ class PickerApp(App[dict[str, set[str]] | None]):
                         component=component,
                         currently_installed=name in installed_names,
                         selected=name in installed_names,
+                        naming_collision=name in colliding_names,
                     )
                 )
         return entries
@@ -117,6 +122,8 @@ class PickerApp(App[dict[str, set[str]] | None]):
 
     def _label_for(self, entry: PickerEntry) -> str:
         base = f"[{entry.category}] {entry.name} - {entry.component.description}"
+        if entry.naming_collision:
+            base = f"(!) manually-placed item with this name already exists — {base}"
         if entry.pending_removal:
             return f"(pending removal) {base}"
         mark = "[x]" if entry.selected else "[ ]"

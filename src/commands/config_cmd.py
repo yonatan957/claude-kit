@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 
 import typer
 
-from src.core.diffing import DiffPlan, PlanItem, compute_selection_diff
+from src.core.diffing import DiffPlan, PlanItem, compute_selection_diff, content_hash
 from src.core.paths import (
     agents_dir,
     catalog_remote_url,
@@ -23,14 +23,65 @@ from src.core.paths import (
     skills_dir,
 )
 from src.core.registry import RegistryError, parse_registry
-from src.core.state_model import Component, InstalledRecord, Registry
+from src.core.state_model import (
+    Component,
+    ContentEntry,
+    InstalledRecord,
+    PluginEntry,
+    Registry,
+    ScriptConfig,
+    ScriptEntry,
+)
 from src.installers.catalog_sync import CatalogSyncError, sync_catalog
-from src.installers.content import install_content, remove_content
+from src.installers.content import install_content, relative_dest, remove_content
 from src.installers.marketplace import install_plugin, remove_plugin
 from src.installers.script import install_script_component, remove_script_component
+from src.installers.settings_patch import get_mcp_servers
 from src.ui.tui import ConfigureApp, PickerApp
 
 _CONTENT_TARGET_DIRS = {"skills": skills_dir, "agents": agents_dir}
+
+
+class NamingCollisionRefused(Exception):
+    """Raised when a naming collision (FR-043) is not explicitly confirmed."""
+
+
+def _has_naming_collision(category: str, name: str, component: Component, installed: InstalledRecord) -> bool:
+    """True if `name` already exists outside claude-kit's own tracking — a
+    manually-placed ("user"-sourced) item — per FR-043. Never true for a name
+    claude-kit already tracks (including a previously acknowledged "user"
+    entry), since that's not a *new* collision."""
+    if name in getattr(installed, category):
+        return False
+    if component.handler == "content":
+        target_dir = _CONTENT_TARGET_DIRS[category]()
+        return any((target_dir / relative_dest(f.path)).exists() for f in component.files)
+    if category == "mcps" and component.mcp_config is not None:
+        settings_path = claude_settings_path()
+        if not settings_path.exists():
+            return False
+        raw = settings_path.read_text(encoding="utf-8")
+        return name in get_mcp_servers(raw)
+    return False
+
+
+def _record_user_sourced(category: str, name: str, component: Component, installed: InstalledRecord) -> None:
+    """FR-043's confirmed outcome: track the manually-placed item as
+    "user"-sourced without touching it (no copy, no registration)."""
+    if component.handler == "content":
+        entry = ContentEntry(source="user", installed_hash=content_hash(component), installed_at=datetime.now(UTC))
+    elif component.handler == "marketplace":
+        entry = PluginEntry(
+            source="user", marketplace=component.marketplace or "", version=component.version, enabled=True
+        )
+    else:
+        entry = ScriptEntry(
+            source="user",
+            version=component.version,
+            installed_hash="",
+            config=ScriptConfig(status="pending"),
+        )
+    getattr(installed, category)[name] = entry
 
 
 def _load_installed() -> InstalledRecord:
@@ -66,9 +117,22 @@ def _collect_answers(name: str, component: Component) -> dict[str, str]:
 
 
 def _apply_add(
-    item: PlanItem, registry: Registry, installed: InstalledRecord
+    item: PlanItem,
+    registry: Registry,
+    installed: InstalledRecord,
+    confirm_collision,
 ) -> None:
     category, name, component = item.category, item.name, item.component
+
+    if _has_naming_collision(category, name, component, installed):
+        if not confirm_collision(category, name):
+            raise NamingCollisionRefused(
+                f"{category}.{name}: refused — a manually-placed item with this name "
+                "already exists and the collision was not confirmed"
+            )
+        _record_user_sourced(category, name, component, installed)
+        return
+
     if component.handler == "content":
         target_dir = _CONTENT_TARGET_DIRS[category]()
         entry = install_content(category, name, component, claude_kit_repo_dir(), target_dir)
@@ -92,6 +156,14 @@ def _apply_add(
 
 def _apply_remove(item: PlanItem, registry: Registry, installed: InstalledRecord) -> None:
     category, name, component = item.category, item.name, item.component
+
+    existing_entry = getattr(installed, category).get(name)
+    if existing_entry is not None and existing_entry.source == "user":
+        # claude-kit never touched this item's files/registration (FR-043's
+        # acknowledgment path only ever tracks it) — just stop tracking it.
+        getattr(installed, category).pop(name, None)
+        return
+
     if component.handler == "content":
         target_dir = _CONTENT_TARGET_DIRS[category]()
         remove_content(component, target_dir)
@@ -106,7 +178,21 @@ def _apply_remove(item: PlanItem, registry: Registry, installed: InstalledRecord
         getattr(installed, category).pop(name, None)
 
 
-def _apply_plan(plan: DiffPlan, registry: Registry, installed: InstalledRecord) -> list[str]:
+def _default_confirm_collision(category: str, name: str) -> bool:
+    return typer.confirm(
+        f"'{name}' already exists in {category} but was not installed by claude-kit "
+        "(it appears to be placed manually). Track it as a manually-managed entry "
+        "without overwriting it?",
+        default=False,
+    )
+
+
+def _apply_plan(
+    plan: DiffPlan,
+    registry: Registry,
+    installed: InstalledRecord,
+    confirm_collision=_default_confirm_collision,
+) -> list[str]:
     """Applies every addition/removal in one pass (FR-012). Returns a list of
     error messages for any items that failed; already-applied items are not
     rolled back (each item's own installer keeps its own state consistent)."""
@@ -118,10 +204,21 @@ def _apply_plan(plan: DiffPlan, registry: Registry, installed: InstalledRecord) 
             errors.append(f"{item.category}.{item.name}: remove failed: {exc}")
     for item in plan.to_add:
         try:
-            _apply_add(item, registry, installed)
+            _apply_add(item, registry, installed, confirm_collision)
         except Exception as exc:  # noqa: BLE001 - surfaced to the developer as a plan error
             errors.append(f"{item.category}.{item.name}: install failed: {exc}")
     return errors
+
+
+def _detect_all_collisions(registry: Registry, installed: InstalledRecord) -> dict[str, set[str]]:
+    """Every catalog component that would collide with a manually-placed item
+    if selected — used only to visually flag entries in the picker (FR-043)."""
+    collisions: dict[str, set[str]] = {}
+    for category, components in registry.components_by_category().items():
+        for name, component in components.items():
+            if _has_naming_collision(category, name, component, installed):
+                collisions.setdefault(category, set()).add(name)
+    return collisions
 
 
 def run_config(category: str | None = None) -> None:
@@ -136,7 +233,10 @@ def run_config(category: str | None = None) -> None:
         typer.echo(f"Failed to sync/parse the catalog: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 
-    desired = PickerApp(registry, installed, category_filter=category).run()
+    collisions = _detect_all_collisions(registry, installed)
+    desired = PickerApp(
+        registry, installed, category_filter=category, naming_collisions=collisions
+    ).run()
 
     if desired is None:
         typer.echo("Cancelled. No changes applied.")

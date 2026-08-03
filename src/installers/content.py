@@ -17,7 +17,7 @@ class ContentInstallError(Exception):
     """Raised when copying a content-handler component's declared files fails."""
 
 
-def _relative_dest(file_path: str) -> Path:
+def relative_dest(file_path: str) -> Path:
     """Registry file paths are declared as "<category>/<name>/...";
     strip the leading category segment since `target_dir` already *is*
     that category's directory (e.g. ~/.claude/skills/)."""
@@ -43,7 +43,7 @@ def install_content(
         src_path = catalog_repo_dir / file.path
         if not src_path.exists():
             raise ContentInstallError(f"{category}.{name}: source file not found: {src_path}")
-        dest_path = target_dir / _relative_dest(file.path)
+        dest_path = target_dir / relative_dest(file.path)
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src_path, dest_path)
 
@@ -59,7 +59,7 @@ def remove_content(component: Component, target_dir: Path) -> None:
     any now-empty parent directories back up to (not including) `target_dir`.
     Idempotent: a no-op if already removed."""
     for file in component.files:
-        dest_path = target_dir / _relative_dest(file.path)
+        dest_path = target_dir / relative_dest(file.path)
         dest_path.unlink(missing_ok=True)
 
         parent = dest_path.parent
