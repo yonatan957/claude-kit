@@ -67,8 +67,9 @@ def remove(
 @app.command(name="list")
 def list_cmd() -> None:
     """Read-only view of every catalog component's install/freshness/config/active status."""
-    typer.echo("list: not yet implemented")
-    raise typer.Exit(code=1)
+    from src.commands.list_cmd import run_list
+
+    run_list()
 
 
 @app.command()

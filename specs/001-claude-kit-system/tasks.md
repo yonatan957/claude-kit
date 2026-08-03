@@ -153,7 +153,7 @@ npm/
 ### Implementation for User Story 4
 
 - [X] T049 [US4] Implement `claude-kit list` (read-only render combining the synced catalog with `installed.json`: category, installed, up-to-date vs. outdated, config status, active/inactive; pending visually distinct) in `src/commands/list_cmd.py` per FR-026/FR-027 (depends on T007, T008)
-- [ ] T050 [US4] Wire `list` into `src/cli.py` (depends on T010, T049)
+- [X] T050 [US4] Wire `list` into `src/cli.py` (depends on T010, T049)
 
 **Checkpoint**: User Stories 1–4 all work independently
 
