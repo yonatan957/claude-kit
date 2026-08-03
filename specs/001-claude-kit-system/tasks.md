@@ -192,7 +192,7 @@ npm/
 - [X] T061 [P] Configure the PyInstaller `--onedir` build spec for `src/cli.py` per research.md #8
 - [X] T062 [P] Create `npm/package.json`, `npm/bin/claude-kit.js` (platform-binary exec shim), and `npm/postinstall.js` (fetch/unpack the matching platform build) per research.md #8
 - [X] T063 [P] Write `README.md` covering `npm install -g claude-kit` and the `init`/`config`/`add`/`remove`/`update`/`list`/`check` command surface
-- [ ] T064 Run quickstart.md's full validation walkthrough end-to-end against the fixture Catalog Repo and record the results
+- [X] T064 Run quickstart.md's full validation walkthrough end-to-end against the fixture Catalog Repo and record the results
 
 ---
 
