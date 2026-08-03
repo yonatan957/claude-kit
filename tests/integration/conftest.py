@@ -4,7 +4,13 @@ from pathlib import Path
 
 import pytest
 
-from src.commands import config_apply, config_collision, config_state, update_cmd
+from src.commands import (
+    config_apply,
+    config_collision,
+    config_state,
+    update_cmd,
+    update_refresh,
+)
 from src.installers.catalog_sync import SyncResult
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -76,10 +82,14 @@ def update_env(tmp_path, monkeypatch):
 
     monkeypatch.setattr(update_cmd, "installed_json_path", lambda: paths["installed_path"])
     monkeypatch.setattr(update_cmd, "claude_kit_repo_dir", lambda: CATALOG_DIR)
-    monkeypatch.setattr(update_cmd, "claude_settings_path", lambda: paths["settings_path"])
-    monkeypatch.setattr(update_cmd, "env_dir", lambda: paths["env_dir"])
+
+    # Per-component refresh moved to update_refresh, which imports its path
+    # helpers by value -- so it needs patching independently.
+    monkeypatch.setattr(update_refresh, "claude_kit_repo_dir", lambda: CATALOG_DIR)
+    monkeypatch.setattr(update_refresh, "claude_settings_path", lambda: paths["settings_path"])
+    monkeypatch.setattr(update_refresh, "env_dir", lambda: paths["env_dir"])
     monkeypatch.setattr(
-        update_cmd,
+        update_refresh,
         "_CONTENT_TARGET_DIRS",
         {"skills": lambda: paths["skills_dir"], "agents": lambda: paths["agents_dir"]},
     )

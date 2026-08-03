@@ -4,7 +4,7 @@ without pausing to collect a new value (FR-044)."""
 
 import json
 
-from src.commands import update_cmd
+from src.commands import update_cmd, update_refresh
 
 _CATALOG_COMMANDS = {"add": "true", "install": "true", "update": "true", "remove": "true"}
 
@@ -76,6 +76,7 @@ def test_reverify_failure_marks_pending_and_reports_without_pausing(
         tmp_path, verify_exit_code=1
     )  # credential now invalid
     monkeypatch.setattr(update_cmd, "claude_kit_repo_dir", lambda: catalog)
+    monkeypatch.setattr(update_refresh, "claude_kit_repo_dir", lambda: catalog)
     monkeypatch.setattr(update_cmd, "registry_json_path", lambda: catalog / "registry.json")
     _seed_installed_done(update_env)
 
@@ -95,6 +96,7 @@ def test_reverify_success_keeps_status_done(update_env, monkeypatch, tmp_path):
         tmp_path, verify_exit_code=0
     )  # credential still valid
     monkeypatch.setattr(update_cmd, "claude_kit_repo_dir", lambda: catalog)
+    monkeypatch.setattr(update_refresh, "claude_kit_repo_dir", lambda: catalog)
     monkeypatch.setattr(update_cmd, "registry_json_path", lambda: catalog / "registry.json")
     _seed_installed_done(update_env)
 

@@ -17,6 +17,7 @@ from src.commands import (
     config_state,
     list_cmd,
     update_cmd,
+    update_refresh,
 )
 from src.installers.catalog_sync import SyncResult
 
@@ -46,9 +47,10 @@ def full_system_env(tmp_path, monkeypatch):
             lambda url, repo_dir=None: SyncResult(commit="fixed-commit", synced=True),
         )
 
-    monkeypatch.setattr(update_cmd, "claude_settings_path", lambda: settings_path)
-    monkeypatch.setattr(update_cmd, "env_dir", lambda: env_dir)
-    monkeypatch.setattr(update_cmd, "_CONTENT_TARGET_DIRS", content_dirs)
+    monkeypatch.setattr(update_refresh, "claude_kit_repo_dir", lambda: CATALOG_DIR)
+    monkeypatch.setattr(update_refresh, "claude_settings_path", lambda: settings_path)
+    monkeypatch.setattr(update_refresh, "env_dir", lambda: env_dir)
+    monkeypatch.setattr(update_refresh, "_CONTENT_TARGET_DIRS", content_dirs)
 
     monkeypatch.setattr(config_apply, "claude_kit_repo_dir", lambda: CATALOG_DIR)
     monkeypatch.setattr(config_apply, "claude_settings_path", lambda: settings_path)

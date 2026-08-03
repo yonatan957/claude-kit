@@ -4,7 +4,7 @@ pausing (FR-024)."""
 
 import json
 
-from src.commands import update_cmd
+from src.commands import update_cmd, update_refresh
 
 
 def _build_catalog_with_new_required_input(tmp_path):
@@ -50,6 +50,7 @@ def _build_catalog_with_new_required_input(tmp_path):
 def test_update_new_required_input_marks_pending_without_pausing(update_env, monkeypatch, tmp_path):
     catalog = _build_catalog_with_new_required_input(tmp_path)
     monkeypatch.setattr(update_cmd, "claude_kit_repo_dir", lambda: catalog)
+    monkeypatch.setattr(update_refresh, "claude_kit_repo_dir", lambda: catalog)
     monkeypatch.setattr(update_cmd, "registry_json_path", lambda: catalog / "registry.json")
 
     # Simulate a prior install from before "api_token" existed: stored at an
