@@ -125,7 +125,7 @@ npm/
 
 ### Tests for User Story 3
 
-- [ ] T041 [P] [US3] Integration test: `update` syncs the catalog, refreshes installed components, reuses existing credentials without re-prompting, and never reads stdin in `tests/integration/test_update.py`
+- [X] T041 [P] [US3] Integration test: `update` syncs the catalog, refreshes installed components, reuses existing credentials without re-prompting, and never reads stdin in `tests/integration/test_update.py`
 - [ ] T042 [P] [US3] Integration test: `update` halts with a non-zero exit and applies no changes when the catalog's `min_cli_version` exceeds the running CLI version in `tests/integration/test_update_version_gate.py`
 - [ ] T043 [P] [US3] Integration test: running `update` twice consecutively with an unchanged catalog produces a byte-identical `installed.json` (aside from timestamps) in `tests/integration/test_update_idempotency.py`
 - [ ] T044 [P] [US3] Integration test: an update that introduces a new required input marks that component `"pending"` and lists it in the end-of-run summary, without pausing in `tests/integration/test_update_new_input.py`
