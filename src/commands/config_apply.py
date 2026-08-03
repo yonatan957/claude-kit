@@ -6,11 +6,14 @@ since each installer keeps its own state consistent (script-lifecycle.md).
 
 from __future__ import annotations
 
-from src.commands.config_collision import CONTENT_TARGET_DIRS, NamingCollisionRefused
-from src.commands.config_collision import default_confirm_collision, has_naming_collision
+from src.commands.config_collision import (
+    CONTENT_TARGET_DIRS,
+    NamingCollisionRefused,
+    has_naming_collision,
+)
 from src.commands.config_prompt import collect_answers
 from src.commands.config_record import record_user_sourced
-from src.core.diffing import DiffPlan, PlanItem
+from src.core.diffing import PlanItem
 from src.core.paths import claude_kit_repo_dir, claude_settings_path, env_dir
 from src.core.state_model import InstalledRecord, Registry
 from src.installers.content import install_content, remove_content
@@ -40,8 +43,13 @@ def apply_add(
     elif component.handler == "script":
         answers = collect_answers(name, component) if component.inputs else {}
         getattr(installed, category)[name] = install_script_component(
-            category, name, component, claude_kit_repo_dir(), answers,
-            claude_settings_path(), env_dir(),
+            category,
+            name,
+            component,
+            claude_kit_repo_dir(),
+            answers,
+            claude_settings_path(),
+            env_dir(),
         )
 
 
@@ -65,24 +73,3 @@ def apply_remove(item: PlanItem, registry: Registry, installed: InstalledRecord)
             category, name, claude_kit_repo_dir(), claude_settings_path(), env_dir()
         )
     getattr(installed, category).pop(name, None)
-
-
-def apply_plan(
-    plan: DiffPlan,
-    registry: Registry,
-    installed: InstalledRecord,
-    confirm_collision=default_confirm_collision,
-) -> list[str]:
-    # One error message per failed item; an empty list means success.
-    errors: list[str] = []
-    for item in plan.to_remove:
-        try:
-            apply_remove(item, registry, installed)
-        except Exception as exc:  # noqa: BLE001 - surfaced as a plan error
-            errors.append(f"{item.category}.{item.name}: remove failed: {exc}")
-    for item in plan.to_add:
-        try:
-            apply_add(item, registry, installed, confirm_collision)
-        except Exception as exc:  # noqa: BLE001 - surfaced as a plan error
-            errors.append(f"{item.category}.{item.name}: install failed: {exc}")
-    return errors

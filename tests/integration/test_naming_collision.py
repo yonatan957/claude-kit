@@ -5,7 +5,7 @@ distinct confirmation (FR-043)."""
 import json
 from pathlib import Path
 
-from src.commands import config_apply, config_collision
+from src.commands import config_apply, config_collision, config_plan
 from src.core.diffing import compute_selection_diff
 from src.core.state_model import InstalledRecord, Registry
 
@@ -74,7 +74,7 @@ def test_selection_refused_without_confirmation(tmp_path, monkeypatch):
     desired = {**_EMPTY_SELECTION, "skills": {"fixture-skill"}}
     plan = compute_selection_diff(registry, installed, desired)
 
-    errors = config_apply.apply_plan(plan, registry, installed, confirm_collision=lambda c, n: False)
+    errors = config_plan.apply_plan(plan, registry, installed, confirm_collision=lambda c, n: False)
 
     assert len(errors) == 1
     assert "fixture-skill" not in installed.skills
@@ -92,7 +92,7 @@ def test_selection_tracked_as_user_sourced_when_confirmed(tmp_path, monkeypatch)
     desired = {**_EMPTY_SELECTION, "skills": {"fixture-skill"}}
     plan = compute_selection_diff(registry, installed, desired)
 
-    errors = config_apply.apply_plan(plan, registry, installed, confirm_collision=lambda c, n: True)
+    errors = config_plan.apply_plan(plan, registry, installed, confirm_collision=lambda c, n: True)
 
     assert errors == []
     assert installed.skills["fixture-skill"].source == "user"

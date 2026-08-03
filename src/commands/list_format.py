@@ -37,4 +37,4 @@ def format_row(row: dict) -> str:
         config,
         "yes" if row["active"] else "no",
     )
-    return " ".join(f"{value:<{width}}" for value, (_, width) in zip(values, _COLUMNS))
+    return " ".join(f"{value:<{width}}" for value, (_, width) in zip(values, _COLUMNS, strict=True))

@@ -12,9 +12,7 @@ from prompt_toolkit import prompt as pt_prompt
 from src.core.state_model import ComponentInput
 
 
-def collect_inputs(
-    component_name: str, inputs: list[ComponentInput]
-) -> dict[str, str] | None:
+def collect_inputs(component_name: str, inputs: list[ComponentInput]) -> dict[str, str] | None:
     """Returns the collected answers, or `None` if the developer cancelled."""
     answers: dict[str, str] = {}
     for declared in inputs:

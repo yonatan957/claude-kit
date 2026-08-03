@@ -31,11 +31,35 @@ credentials it needs — all without touching a JSON or Markdown file by hand.
 | `claude-kit add <type> <name>` | Non-interactively install one named component (for scripts/CI). Drives the same configuration prompts if the component needs input. |
 | `claude-kit remove <type> <name>` | Non-interactively remove one named, installed component. Idempotent — a no-op if it's already gone. |
 | `claude-kit update` | Refreshes every installed component against the latest catalog, reusing stored credentials. Never prompts, never blocks — safe for CI/unattended runs. |
-| `claude-kit list` | Read-only view of every catalog component: installed or not, current or outdated, configuration status, active or inactive. |
+| `claude-kit list` | Read-only view of the components you have **installed**: version, current or outdated, configuration status, active or inactive. To browse what's *available*, use `config`. |
 | `claude-kit check` | Background check (normally launched detached by the session-start hook) that refreshes the notice shown at the next session start. |
 
 Every command exits `0` on success and non-zero with a clear message on failure, so `add`/
 `remove`/`update` are safe to script and gate on.
+
+## Using the picker
+
+`claude-kit config` runs **inline** in your terminal — it doesn't take over the screen or
+clear your scrollback, and its final frame stays in your history like any other command's
+output.
+
+| Key | What it does |
+|---|---|
+| `↑` / `↓` | Move between rows. |
+| `Enter` | Select or deselect the highlighted component. On the **Approve & Install** row at the bottom of the list, applies everything at once. |
+| `Tab` | Toggle search on and off — the only way in, and the only way out. |
+| `Esc` | Leave search, or cancel the picker with no changes applied. |
+
+Selection is shown with a stable marker that never moves or disappears as you navigate:
+
+| Marker | Meaning |
+|---|---|
+| `[ ]` | Not selected. |
+| `[✓]` | Selected — will be installed (green). |
+| `[X]` | Currently installed, now deselected — will be removed (red). |
+
+Approval is deliberately reachable only from the bottom row: there is no single-key
+shortcut that can commit changes by accident.
 
 ## How it works
 

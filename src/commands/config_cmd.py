@@ -13,8 +13,8 @@ from datetime import UTC, datetime
 
 import typer
 
-from src.commands.config_apply import apply_plan
 from src.commands.config_collision import detect_all_collisions
+from src.commands.config_plan import apply_plan
 from src.commands.config_state import load_installed, save_installed, sync_and_load_registry
 from src.core.diffing import compute_selection_diff
 from src.core.registry import RegistryError
