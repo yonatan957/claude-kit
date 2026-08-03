@@ -52,7 +52,7 @@ npm/
 - [X] T011 [P] Contract test: validate the fixture `registry.json` against `contracts/registry-schema.json` in `tests/contract/test_registry_schema.py`
 - [X] T012 [P] Contract test: validate a generated `installed.json` shape against `contracts/installed-schema.json` in `tests/contract/test_installed_schema.py`
 - [X] T013 [P] Contract test: validate a generated `state.json` shape against `contracts/state-schema.json` in `tests/contract/test_state_schema.py`
-- [ ] T014 [P] Unit tests for `src/core/registry.py` (handler validation, `min_cli_version` gate) in `tests/unit/test_registry.py`
+- [X] T014 [P] Unit tests for `src/core/registry.py` (handler validation, `min_cli_version` gate) in `tests/unit/test_registry.py`
 - [ ] T015 [P] Unit tests for `src/core/diffing.py` (add/remove/update plan correctness) in `tests/unit/test_diffing.py`
 
 **Checkpoint**: Foundation ready — user story implementation can now begin
