@@ -22,7 +22,6 @@ SRC_DIR = Path(__file__).resolve().parents[2] / "src"
 DEFERRED_OVER_LIMIT: frozenset[str] = frozenset(
     {
         "installers/script.py",
-        "core/state_model.py",
         "commands/update_cmd.py",
         "installers/settings_patch.py",
     }
