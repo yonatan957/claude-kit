@@ -56,6 +56,7 @@ class Component(BaseModel):
     files: list[ComponentFile] = Field(default_factory=list)
     inputs: list[ComponentInput] = Field(default_factory=list)
     mcp_config: dict | None = None
+    marketplace: str | None = None  # marketplace-handler components only
 
     @model_validator(mode="after")
     def _validate_component(self) -> Component:

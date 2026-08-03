@@ -33,7 +33,8 @@
     "fixture-plugin": {
       "description": "A fixture marketplace plugin for automated testing",
       "handler": "marketplace",
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "marketplace": "claude-kit-fixtures"
     }
   },
   "tools": {
