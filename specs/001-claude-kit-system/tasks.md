@@ -191,7 +191,7 @@ npm/
 - [X] T060 [P] Full-system idempotency pass: run quickstart.md's entire Story 1–5 sequence twice end-to-end from the same populated state and diff `installed.json`/`state.json`/`claude_settings.json` (only timestamps may differ) in `tests/integration/test_full_idempotency.py`
 - [X] T061 [P] Configure the PyInstaller `--onedir` build spec for `src/cli.py` per research.md #8
 - [X] T062 [P] Create `npm/package.json`, `npm/bin/claude-kit.js` (platform-binary exec shim), and `npm/postinstall.js` (fetch/unpack the matching platform build) per research.md #8
-- [ ] T063 [P] Write `README.md` covering `npm install -g claude-kit` and the `init`/`config`/`add`/`remove`/`update`/`list`/`check` command surface
+- [X] T063 [P] Write `README.md` covering `npm install -g claude-kit` and the `init`/`config`/`add`/`remove`/`update`/`list`/`check` command surface
 - [ ] T064 Run quickstart.md's full validation walkthrough end-to-end against the fixture Catalog Repo and record the results
 
 ---
