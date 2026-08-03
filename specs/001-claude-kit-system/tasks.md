@@ -148,7 +148,7 @@ npm/
 
 ### Tests for User Story 4
 
-- [ ] T048 [P] [US4] Integration test: `claude-kit list` shows every catalog component's category, installed/not, current-vs-outdated (hash/version compare), config status (done/pending/failed/n-a), and active/inactive state, with pending visually distinguished from done in `tests/integration/test_list.py`
+- [X] T048 [P] [US4] Integration test: `claude-kit list` shows every catalog component's category, installed/not, current-vs-outdated (hash/version compare), config status (done/pending/failed/n-a), and active/inactive state, with pending visually distinguished from done in `tests/integration/test_list.py`
 
 ### Implementation for User Story 4
 
