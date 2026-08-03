@@ -9,7 +9,15 @@ from pathlib import Path
 
 import pytest
 
-from src.commands import add_remove_cmd, check_cmd, config_cmd, list_cmd, update_cmd
+from src.commands import (
+    add_remove_cmd,
+    check_cmd,
+    config_apply,
+    config_collision,
+    config_state,
+    list_cmd,
+    update_cmd,
+)
 from src.installers.catalog_sync import SyncResult
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -25,11 +33,11 @@ def full_system_env(tmp_path, monkeypatch):
     agents_dir = tmp_path / ".claude" / "agents"
     state_path = tmp_path / "state.json"
 
-    for module in (config_cmd, update_cmd):
+    content_dirs = {"skills": lambda: skills_dir, "agents": lambda: agents_dir}
+
+    for module in (config_state, update_cmd):
         monkeypatch.setattr(module, "installed_json_path", lambda: installed_path)
         monkeypatch.setattr(module, "claude_kit_repo_dir", lambda: CATALOG_DIR)
-        monkeypatch.setattr(module, "claude_settings_path", lambda: settings_path)
-        monkeypatch.setattr(module, "env_dir", lambda: env_dir)
         monkeypatch.setattr(module, "registry_json_path", lambda: CATALOG_DIR / "registry.json")
         monkeypatch.setattr(module, "catalog_remote_url", lambda: "unused://fixture")
         monkeypatch.setattr(
@@ -37,17 +45,22 @@ def full_system_env(tmp_path, monkeypatch):
             "sync_catalog",
             lambda url, repo_dir=None: SyncResult(commit="fixed-commit", synced=True),
         )
-        monkeypatch.setattr(
-            module,
-            "_CONTENT_TARGET_DIRS",
-            {"skills": lambda: skills_dir, "agents": lambda: agents_dir},
-        )
 
+    monkeypatch.setattr(update_cmd, "claude_settings_path", lambda: settings_path)
+    monkeypatch.setattr(update_cmd, "env_dir", lambda: env_dir)
+    monkeypatch.setattr(update_cmd, "_CONTENT_TARGET_DIRS", content_dirs)
+
+    monkeypatch.setattr(config_apply, "claude_kit_repo_dir", lambda: CATALOG_DIR)
+    monkeypatch.setattr(config_apply, "claude_settings_path", lambda: settings_path)
+    monkeypatch.setattr(config_apply, "env_dir", lambda: env_dir)
+    monkeypatch.setattr(config_apply, "CONTENT_TARGET_DIRS", content_dirs)
     monkeypatch.setattr(
-        config_cmd,
-        "_collect_answers",
+        config_apply,
+        "collect_answers",
         lambda name, component: {i.name: "testval" for i in component.inputs},
     )
+    monkeypatch.setattr(config_collision, "CONTENT_TARGET_DIRS", content_dirs)
+    monkeypatch.setattr(config_collision, "claude_settings_path", lambda: settings_path)
 
     monkeypatch.setattr(list_cmd, "installed_json_path", lambda: installed_path)
     monkeypatch.setattr(list_cmd, "registry_json_path", lambda: CATALOG_DIR / "registry.json")

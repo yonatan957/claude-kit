@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from src.commands import config_cmd, update_cmd
+from src.commands import config_apply, config_collision, config_state, update_cmd
 from src.installers.catalog_sync import SyncResult
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -23,32 +23,45 @@ def _isolated_paths(tmp_path: Path) -> dict:
 
 @pytest.fixture
 def cli_env(tmp_path, monkeypatch):
-    """Isolates config_cmd's (and, transitively, add_remove_cmd's) filesystem
-    targets under tmp_path, and stubs the catalog sync to use the local
-    fixture Catalog Repo directly rather than a real git clone/pull."""
-    paths = _isolated_paths(tmp_path)
+    """Isolates the config flow's (and, transitively, add_remove_cmd's)
+    filesystem targets under tmp_path, and stubs the catalog sync to use the
+    local fixture Catalog Repo directly rather than a real git clone/pull.
 
-    monkeypatch.setattr(config_cmd, "installed_json_path", lambda: paths["installed_path"])
-    monkeypatch.setattr(config_cmd, "claude_kit_repo_dir", lambda: CATALOG_DIR)
-    monkeypatch.setattr(config_cmd, "claude_settings_path", lambda: paths["settings_path"])
-    monkeypatch.setattr(config_cmd, "env_dir", lambda: paths["env_dir"])
+    The config flow spans several modules since the Phase 2 split, and each
+    imports its path helpers by value — so every module that *uses* a name has
+    to be patched, not just the one that defines it.
+    """
+    paths = _isolated_paths(tmp_path)
+    content_dirs = {
+        "skills": lambda: paths["skills_dir"],
+        "agents": lambda: paths["agents_dir"],
+    }
+
+    # State I/O: installed.json, the catalog cache, and the sync stub.
+    monkeypatch.setattr(config_state, "installed_json_path", lambda: paths["installed_path"])
+    monkeypatch.setattr(config_state, "claude_kit_repo_dir", lambda: CATALOG_DIR)
+    monkeypatch.setattr(config_state, "registry_json_path", lambda: CATALOG_DIR / "registry.json")
+    monkeypatch.setattr(config_state, "catalog_remote_url", lambda: "unused://fixture")
     monkeypatch.setattr(
-        config_cmd,
-        "_CONTENT_TARGET_DIRS",
-        {"skills": lambda: paths["skills_dir"], "agents": lambda: paths["agents_dir"]},
-    )
-    monkeypatch.setattr(config_cmd, "registry_json_path", lambda: CATALOG_DIR / "registry.json")
-    monkeypatch.setattr(config_cmd, "catalog_remote_url", lambda: "unused://fixture")
-    monkeypatch.setattr(
-        config_cmd,
+        config_state,
         "sync_catalog",
         lambda url, repo_dir=None: SyncResult(commit="fixture-commit", synced=True),
     )
+
+    # Install/remove dispatch: where components land and how inputs are answered.
+    monkeypatch.setattr(config_apply, "claude_kit_repo_dir", lambda: CATALOG_DIR)
+    monkeypatch.setattr(config_apply, "claude_settings_path", lambda: paths["settings_path"])
+    monkeypatch.setattr(config_apply, "env_dir", lambda: paths["env_dir"])
+    monkeypatch.setattr(config_apply, "CONTENT_TARGET_DIRS", content_dirs)
     monkeypatch.setattr(
-        config_cmd,
-        "_collect_answers",
+        config_apply,
+        "collect_answers",
         lambda name, component: {i.name: "testval" for i in component.inputs},
     )
+
+    # Collision detection reads the same locations independently.
+    monkeypatch.setattr(config_collision, "CONTENT_TARGET_DIRS", content_dirs)
+    monkeypatch.setattr(config_collision, "claude_settings_path", lambda: paths["settings_path"])
 
     return paths
 

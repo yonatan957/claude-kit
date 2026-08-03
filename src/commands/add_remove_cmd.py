@@ -13,16 +13,14 @@ from datetime import UTC, datetime
 
 import typer
 
-from src.commands.config_cmd import (
-    NamingCollisionRefused,
-    NoTTYError,
-    _apply_add,
-    _apply_remove,
-    _default_confirm_collision,
-    _load_installed,
-    _save_installed,
-    _sync_and_load_registry,
-)
+from src.commands.config_apply import apply_add as _apply_add
+from src.commands.config_apply import apply_remove as _apply_remove
+from src.commands.config_collision import NamingCollisionRefused
+from src.commands.config_collision import default_confirm_collision as _default_confirm_collision
+from src.commands.config_prompt import NoTTYError
+from src.commands.config_state import load_installed as _load_installed
+from src.commands.config_state import save_installed as _save_installed
+from src.commands.config_state import sync_and_load_registry as _sync_and_load_registry
 from src.core.diffing import PlanItem
 from src.core.registry import RegistryError
 from src.core.state_model import CategoryName

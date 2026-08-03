@@ -4,7 +4,7 @@ shown, drives Step 2 configure prompts when inputs are required, and exits 0
 
 import json
 
-from src.commands import add_remove_cmd, config_cmd
+from src.commands import add_remove_cmd, config_apply
 from src.core.state_model import PluginEntry
 
 
@@ -37,7 +37,7 @@ def test_add_marketplace_component(cli_env, monkeypatch):
             enabled=True,
         )
 
-    monkeypatch.setattr(config_cmd, "install_plugin", fake_install_plugin)
+    monkeypatch.setattr(config_apply, "install_plugin", fake_install_plugin)
 
     add_remove_cmd.run_add("plugins", "fixture-plugin")
 

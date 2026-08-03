@@ -5,7 +5,7 @@ distinct confirmation (FR-043)."""
 import json
 from pathlib import Path
 
-from src.commands import config_cmd
+from src.commands import config_apply, config_collision
 from src.core.diffing import compute_selection_diff
 from src.core.state_model import InstalledRecord, Registry
 
@@ -36,16 +36,23 @@ def _empty_installed() -> InstalledRecord:
     )
 
 
+def _patch_dirs(tmp_path, monkeypatch, skills_dir) -> None:
+    """Point both the detector and the applier at the temp dirs.
+
+    `config_apply` imports `CONTENT_TARGET_DIRS` by value, so patching only
+    `config_collision` would leave the applier looking at the real ~/.claude.
+    """
+    dirs = {"skills": lambda: skills_dir, "agents": lambda: tmp_path}
+    monkeypatch.setattr(config_collision, "CONTENT_TARGET_DIRS", dirs)
+    monkeypatch.setattr(config_apply, "CONTENT_TARGET_DIRS", dirs)
+    monkeypatch.setattr(config_apply, "claude_kit_repo_dir", lambda: CATALOG_DIR)
+
+
 def _manually_place_fixture_skill(tmp_path, monkeypatch) -> Path:
     skills_dir = tmp_path / ".claude" / "skills"
     (skills_dir / "fixture-skill").mkdir(parents=True)
     (skills_dir / "fixture-skill" / "SKILL.md").write_text("hand-placed, not from claude-kit")
-    monkeypatch.setattr(config_cmd, "claude_kit_repo_dir", lambda: CATALOG_DIR)
-    monkeypatch.setattr(
-        config_cmd,
-        "_CONTENT_TARGET_DIRS",
-        {"skills": lambda: skills_dir, "agents": lambda: tmp_path},
-    )
+    _patch_dirs(tmp_path, monkeypatch, skills_dir)
     return skills_dir
 
 
@@ -54,7 +61,7 @@ def test_collision_is_detected_for_manually_placed_item(tmp_path, monkeypatch):
     registry = _registry()
     installed = _empty_installed()
 
-    collisions = config_cmd._detect_all_collisions(registry, installed)
+    collisions = config_collision.detect_all_collisions(registry, installed)
 
     assert collisions == {"skills": {"fixture-skill"}}
 
@@ -67,7 +74,7 @@ def test_selection_refused_without_confirmation(tmp_path, monkeypatch):
     desired = {**_EMPTY_SELECTION, "skills": {"fixture-skill"}}
     plan = compute_selection_diff(registry, installed, desired)
 
-    errors = config_cmd._apply_plan(plan, registry, installed, confirm_collision=lambda c, n: False)
+    errors = config_apply.apply_plan(plan, registry, installed, confirm_collision=lambda c, n: False)
 
     assert len(errors) == 1
     assert "fixture-skill" not in installed.skills
@@ -85,7 +92,7 @@ def test_selection_tracked_as_user_sourced_when_confirmed(tmp_path, monkeypatch)
     desired = {**_EMPTY_SELECTION, "skills": {"fixture-skill"}}
     plan = compute_selection_diff(registry, installed, desired)
 
-    errors = config_cmd._apply_plan(plan, registry, installed, confirm_collision=lambda c, n: True)
+    errors = config_apply.apply_plan(plan, registry, installed, confirm_collision=lambda c, n: True)
 
     assert errors == []
     assert installed.skills["fixture-skill"].source == "user"
@@ -97,15 +104,10 @@ def test_selection_tracked_as_user_sourced_when_confirmed(tmp_path, monkeypatch)
 def test_no_collision_when_name_is_not_present_on_disk(tmp_path, monkeypatch):
     skills_dir = tmp_path / ".claude" / "skills"
     skills_dir.mkdir(parents=True)
-    monkeypatch.setattr(config_cmd, "claude_kit_repo_dir", lambda: CATALOG_DIR)
-    monkeypatch.setattr(
-        config_cmd,
-        "_CONTENT_TARGET_DIRS",
-        {"skills": lambda: skills_dir, "agents": lambda: tmp_path},
-    )
+    _patch_dirs(tmp_path, monkeypatch, skills_dir)
     registry = _registry()
     installed = _empty_installed()
 
-    collisions = config_cmd._detect_all_collisions(registry, installed)
+    collisions = config_collision.detect_all_collisions(registry, installed)
 
     assert collisions == {}

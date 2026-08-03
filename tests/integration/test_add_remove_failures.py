@@ -7,7 +7,7 @@ import json
 import pytest
 import typer
 
-from src.commands import add_remove_cmd, config_cmd
+from src.commands import add_remove_cmd, config_apply, config_state
 
 
 def test_add_unknown_name_fails_non_zero(cli_env):
@@ -61,8 +61,9 @@ def test_add_failing_lifecycle_script_fails_non_zero_and_leaves_no_state(
     registry_path = broken_catalog / "registry.json"
     registry_path.write_text(json.dumps(registry_data))
 
-    monkeypatch.setattr(config_cmd, "claude_kit_repo_dir", lambda: broken_catalog)
-    monkeypatch.setattr(config_cmd, "registry_json_path", lambda: registry_path)
+    monkeypatch.setattr(config_state, "claude_kit_repo_dir", lambda: broken_catalog)
+    monkeypatch.setattr(config_apply, "claude_kit_repo_dir", lambda: broken_catalog)
+    monkeypatch.setattr(config_state, "registry_json_path", lambda: registry_path)
 
     with pytest.raises(typer.Exit) as exc_info:
         add_remove_cmd.run_add("tools", "broken-tool")
