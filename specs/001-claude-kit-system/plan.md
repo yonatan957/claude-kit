@@ -208,13 +208,15 @@ Three details this pins down, each traceable to a requirement:
 
 Principle VI is currently violated by eight files that this phase does not otherwise touch. They are recorded here rather than fixed opportunistically, because splitting a file the phase has no other reason to open risks regressions with no offsetting benefit and would make this change's diff unreviewable. Each carries a proposed split so the follow-up is mechanical:
 
-| File | Lines of code | Proposed split | Justification for deferring |
-|---|---:|---|---|
-| `installers/script.py` | 169 | `script.py` (orchestration) + `script_steps.py` (install/config/verify runners) + `script_env.py` (env assembly) | Highest-risk file in the repo (drives real subprocesses against the user's machine); must be split under its own test coverage, not alongside a UI rewrite |
-| `commands/update_cmd.py` | 125 | `update_cmd.py` (flow) + `update_reverify.py` (FR-044 re-verification) | Independent of the TUI and of `list`; no reason to couple it to this change |
-| `installers/settings_patch.py` | 121 | `settings_patch.py` (span editor) + `json_span.py` (tokenizer/offset finder) | Carries the byte-for-byte guarantee (FR-038/SC-007); split deserves its own focused review |
-| `core/state_model.py` | 114 | `models_registry.py` + `models_installed.py` + `models_state.py`, re-exported from `state_model.py` | Imported by nearly every module; a split touches every import site and would swamp this diff |
+**Status: resolved.** All four were split (commits `fc15eea`, `4b8c1b9`, `4bd1c13`, `6280b22`). `DEFERRED_OVER_LIMIT` is now empty, so Principle VI applies to `src/` with no exceptions and the largest file is 81 lines of code, down from 282.
 
-Four files previously on this list — `commands/add_remove_cmd.py`, `core/diffing.py`, `commands/check_cmd.py`, and `notify/hook.py` — are **no longer violations** under the corrected metric. They were flagged only for being well-commented; splitting them would have been busywork.
+| File | Was (LOC) | Split into | Now |
+|---|---:|---|---:|
+| `installers/script.py` | 169 | `script` (facade) + `script_install` + `script_remove` + `script_runner` + `script_mcp` + `script_env` | ≤81 |
+| `commands/update_cmd.py` | 125 | `update_cmd` (run) + `update_refresh` (one component) | ≤81 |
+| `installers/settings_patch.py` | 121 | `settings_patch` (policy) + `json_span` (spans) + `json_scan` (chars) | ≤52 |
+| `core/state_model.py` | 114 | facade + `models_common` / `models_registry` / `models_installed` / `models_state` | ≤66 |
+
+Two of these needed more modules than proposed above — `script.py` took six rather than three, `settings_patch.py` three rather than two — because the corrected metric was applied to each split's *outputs*, not just its input. Every public API was preserved through a re-exporting facade, so no call site outside the split modules changed.
 
 **Recommended sequencing**: land this phase's TUI/`list` work first, then the eight splits above as one focused follow-up, introducing `tests/contract/test_file_line_limit.py` in the same follow-up so the gate turns green and stays green. Until that test lands, Principle VI remains review-enforced and will drift again.
