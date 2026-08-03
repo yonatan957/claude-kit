@@ -6,9 +6,10 @@ v1.2.0, which supersedes the earlier total-physical-lines rule — that metric
 penalised documentation rather than complexity, and was abandoned after it
 caused docstrings to be deleted just to fit).
 
-`DEFERRED_OVER_LIMIT` holds files that predate mechanical enforcement and are
-tracked in plan.md's Complexity Tracking table. Remove each entry as its split
-lands, then delete the allowlist entirely. Nothing may ever be *added* to it.
+`DEFERRED_OVER_LIMIT` is now **empty**: every file that predated mechanical
+enforcement has been split. Principle VI applies to `src/` with no exceptions.
+Nothing may be added here — an over-limit file is a file to split, and the
+second test below fails if a stale entry is ever left behind.
 """
 
 from __future__ import annotations
@@ -19,11 +20,7 @@ MAX_LINES = 90
 
 SRC_DIR = Path(__file__).resolve().parents[2] / "src"
 
-DEFERRED_OVER_LIMIT: frozenset[str] = frozenset(
-    {
-        "installers/script.py",
-    }
-)
+DEFERRED_OVER_LIMIT: frozenset[str] = frozenset()
 
 
 def line_count(path: Path) -> int:
