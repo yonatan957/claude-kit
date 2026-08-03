@@ -19,8 +19,9 @@ app = typer.Typer(
 @app.command()
 def init() -> None:
     """First-run setup: verify environment, create local state, launch config."""
-    typer.echo("init: not yet implemented")
-    raise typer.Exit(code=1)
+    from src.commands.init_cmd import run_init
+
+    run_init()
 
 
 @app.command()
@@ -28,8 +29,9 @@ def config(
     type: str = typer.Argument(None, help="Optional category to pre-filter the picker."),
 ) -> None:
     """Interactive two-step picker + configure flow."""
-    typer.echo("config: not yet implemented")
-    raise typer.Exit(code=1)
+    from src.commands.config_cmd import run_config
+
+    run_config(category=type)
 
 
 @app.command()
