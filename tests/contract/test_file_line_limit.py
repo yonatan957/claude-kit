@@ -23,7 +23,6 @@ DEFERRED_OVER_LIMIT: frozenset[str] = frozenset(
     {
         "installers/script.py",
         "commands/update_cmd.py",
-        "installers/settings_patch.py",
     }
 )
 
@@ -50,7 +49,7 @@ def test_no_source_file_exceeds_line_limit() -> None:
 
     assert not offenders, (
         "Constitution Principle VI: these files exceed "
-        f"{MAX_LINES} total physical lines and must be split into "
+        f"{MAX_LINES} lines of code and must be split into "
         "single-responsibility modules before merge:\n"
         + "\n".join(f"  {name}: {count} lines" for name, count in offenders.items())
     )
