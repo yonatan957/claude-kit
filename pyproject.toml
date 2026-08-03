@@ -15,6 +15,9 @@ dev = [
     "pytest-asyncio>=0.23",
     "jsonschema>=4",
 ]
+build = [
+    "pyinstaller>=6",
+]
 
 [project.scripts]
 claude-kit = "src.cli:app"
