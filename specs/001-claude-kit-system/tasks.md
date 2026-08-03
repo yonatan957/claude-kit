@@ -134,7 +134,7 @@ npm/
 ### Implementation for User Story 3
 
 - [X] T046 [US3] Implement `claude-kit update` (sync catalog via T009, check the `min_cli_version` gate via T007 and halt with no changes if violated, re-run install/config/verify for every installed component reusing stored answers, never read stdin, print an end-of-run summary of anything `"pending"`/`"failed"`) in `src/commands/update_cmd.py` per FR-021–FR-025/FR-044 (depends on T007, T008, T009, T023, T024, T027)
-- [ ] T047 [US3] Wire `update` into `src/cli.py` (depends on T010, T046)
+- [X] T047 [US3] Wire `update` into `src/cli.py` (depends on T010, T046)
 
 **Checkpoint**: User Stories 1, 2, AND 3 all work independently
 

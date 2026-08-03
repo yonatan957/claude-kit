@@ -37,8 +37,9 @@ def config(
 @app.command()
 def update() -> None:
     """Non-interactive sync of all installed components against the latest catalog."""
-    typer.echo("update: not yet implemented")
-    raise typer.Exit(code=1)
+    from src.commands.update_cmd import run_update
+
+    run_update()
 
 
 @app.command()
