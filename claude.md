@@ -1,2 +1,0 @@
-## Git Workflow
-- After successfully completing each task from the task list (whether during `/speckit.implement` or manual task execution), you MUST automatically stage your changes (`git add`) and perform a `git commit` with a concise, descriptive commit message summarizing what was accomplished in that specific task.

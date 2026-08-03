@@ -62,9 +62,6 @@ python -m venv .venv
 
 Run the CLI directly during development with `python -m src.cli <command>`.
 
-Build a frozen binary locally with:
-
-```sh
-pip install -e ".[build]"
-pyinstaller claude-kit.spec
-```
+See [`DEVELOPMENT.md`](DEVELOPMENT.md) for the full guide: trying the
+interactive picker yourself in a sandboxed demo environment, building a
+frozen binary, and packaging/publishing the npm distribution.

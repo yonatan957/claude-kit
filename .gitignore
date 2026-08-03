@@ -24,3 +24,6 @@ Thumbs.db
 # Local test artifacts
 .coverage
 htmlcov/
+
+# Local sandbox home for manually trying the CLI (see DEVELOPMENT.md §3)
+.demo/
