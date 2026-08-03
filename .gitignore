@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Build/packaging output
+dist/
+build/
+
+# Node (npm/ packaging shim)
+node_modules/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local test artifacts
+.coverage
+htmlcov/
+
+# Local sandbox home for manually trying the CLI (see DEVELOPMENT.md §3)
+.demo/
