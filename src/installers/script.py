@@ -2,7 +2,7 @@
 FR-036/FR-042): tools & MCP servers.
 
 Accepts already-collected `answers` as parameters — input collection itself
-happens only in commands/ or ui/tui.py, never here.
+happens only in commands/ or ui/, never here.
 """
 
 from __future__ import annotations

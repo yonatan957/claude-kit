@@ -1,18 +1,29 @@
-"""Integration test (Textual `Pilot`): picker Step 1 — toggle selections
-update live per-category counts, search mode filters and pins selections,
-deselecting an active component flags it as pending removal, cancel applies
-zero changes (FR-006-FR-013)."""
+"""Integration test: picker Step 1 driven through real key presses.
+
+Uses `prompt_toolkit`'s `create_pipe_input()` + `DummyOutput()` in place of the
+old Textual `Pilot` harness. Note there is no longer a step that presses `Tab`
+to shift focus — `Tab` is now exclusively the search toggle (FR-009).
+"""
 
 import json
 from pathlib import Path
 
 import pytest
+from prompt_toolkit.application import create_app_session
+from prompt_toolkit.input import create_pipe_input
+from prompt_toolkit.output import DummyOutput
 
 from src.core.state_model import ContentEntry, InstalledRecord, Registry
-from src.ui.tui import PickerApp
+from src.ui.state import PickerState
+from src.ui.tui_app import build_application, build_entries
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_REGISTRY = REPO_ROOT / "tests" / "fixtures" / "registry_repo" / "registry.json"
+
+CR = "\r"
+TAB = "\t"
+DOWN = "\x1b[B"
+ESC = "\x1b"
 
 
 @pytest.fixture
@@ -31,77 +42,70 @@ def empty_installed() -> InstalledRecord:
     )
 
 
-async def test_toggle_updates_live_selection_and_count(registry, empty_installed):
-    app = PickerApp(registry, empty_installed)
-    async with app.run_test() as pilot:
-        await pilot.pause()
-        target_category = app.entries[0].category
-        before = sum(1 for e in app.entries if e.category == target_category and e.selected)
-
-        await pilot.press("space")
-        await pilot.pause()
-
-        assert app.entries[0].selected is True
-        after = sum(1 for e in app.entries if e.category == target_category and e.selected)
-        assert after == before + 1
-        counts_text = app.query_one("#counts").content
-        assert f"{target_category}: {after}" in str(counts_text)
+def drive(state: PickerState, keys: str):
+    """Feed `keys` to a real Application over a pipe; return its exit value."""
+    with create_pipe_input() as pipe:
+        pipe.send_text(keys)
+        with create_app_session(input=pipe, output=DummyOutput()):
+            return build_application(state).run()
 
 
-async def test_search_mode_filters_and_pins_on_return(registry, empty_installed):
-    app = PickerApp(registry, empty_installed)
-    async with app.run_test() as pilot:
-        await pilot.pause()
-        await pilot.press("/")
-        await pilot.pause()
-        assert app.search_mode is True
-
-        for ch in "fixture-tool":
-            await pilot.press(ch)
-        await pilot.pause()
-
-        visible = app._visible_entries()
-        assert {e.name for e in visible} == {"fixture-tool"}
-
-        await pilot.press("tab")  # move focus from the search input to the list
-        await pilot.press("space")  # select the only visible (filtered) result
-        await pilot.pause()
-
-        await pilot.press("escape")  # return to browsing
-        await pilot.pause()
-
-        assert app.search_mode is False
-        vis = app._visible_entries()
-        assert vis[0].name == "fixture-tool"
-        assert vis[0].pinned is True
+def make_state(registry, installed, **kwargs) -> PickerState:
+    return PickerState(build_entries(registry, installed, **kwargs))
 
 
-async def test_deselecting_active_component_flags_pending_removal(registry, empty_installed):
+def test_enter_toggles_selection_and_updates_counts(registry, empty_installed):
+    state = make_state(registry, empty_installed)
+    target = state.visible_entries()[0]
+    category = target.category
+    before = dict(state.counts())[category]
+
+    drive(state, CR + ESC)
+
+    assert target.selected is True
+    assert dict(state.counts())[category] == before + 1
+
+
+def test_tab_enters_search_filters_and_pins_on_return(registry, empty_installed):
+    state = make_state(registry, empty_installed)
+
+    drive(state, TAB + "fixture-tool" + CR + TAB + ESC)
+
+    assert [e.name for e in state.visible_entries()][0] == "fixture-tool"
+    assert state.visible_entries()[0].pinned is True
+    assert state.visible_entries()[0].selected is True
+
+
+def test_deselecting_an_active_component_flags_pending_removal(registry, empty_installed):
     empty_installed.skills["fixture-skill"] = ContentEntry(
         source="claude-kit", installed_hash="whatever", installed_at="2026-08-03T00:00:00Z"
     )
-    app = PickerApp(registry, empty_installed)
-    async with app.run_test() as pilot:
-        await pilot.pause()
-        skill_entry = next(e for e in app.entries if e.name == "fixture-skill")
-        assert skill_entry.currently_installed is True
-        assert skill_entry.pending_removal is False
+    state = make_state(registry, empty_installed)
+    skill = next(e for e in state.entries if e.name == "fixture-skill")
+    assert skill.currently_installed is True
 
-        await pilot.press("space")  # deselect the currently-active skill
-        await pilot.pause()
+    index = state.visible_entries().index(skill)
+    drive(state, DOWN * index + CR + ESC)
 
-        assert skill_entry.selected is False
-        assert skill_entry.pending_removal is True
+    assert skill.selected is False
+    assert skill.pending_removal is True
 
 
-async def test_cancel_applies_zero_changes(registry, empty_installed):
-    app = PickerApp(registry, empty_installed)
-    async with app.run_test() as pilot:
-        await pilot.pause()
-        await pilot.press("space")  # make a selection
-        await pilot.pause()
-        await pilot.press("q")  # cancel
-        await pilot.pause()
+def test_escape_cancels_with_zero_changes(registry, empty_installed):
+    state = make_state(registry, empty_installed)
 
-    assert app.return_value is None
-    assert app.cancelled is True
+    result = drive(state, CR + ESC)
+
+    assert result is None  # cancel returns no selection (FR-008)
+
+
+def test_approve_row_returns_the_desired_selection(registry, empty_installed):
+    state = make_state(registry, empty_installed)
+    entry_count = len(state.visible_entries())
+
+    # Select the first entry, walk down to the "Approve & Install" row, press Enter.
+    result = drive(state, CR + DOWN * entry_count + CR)
+
+    assert result is not None
+    selected = {name for names in result.values() for name in names}
+    assert state.visible_entries()[0].name in selected
