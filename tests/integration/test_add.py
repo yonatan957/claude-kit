@@ -31,7 +31,10 @@ def test_add_marketplace_component(cli_env, monkeypatch):
     def fake_install_plugin(name, component, commands):
         calls.append(name)
         return PluginEntry(
-            source="claude-kit", marketplace=component.marketplace, version=component.version, enabled=True
+            source="claude-kit",
+            marketplace=component.marketplace,
+            version=component.version,
+            enabled=True,
         )
 
     monkeypatch.setattr(config_cmd, "install_plugin", fake_install_plugin)

@@ -69,8 +69,12 @@ def _seed_installed_done(update_env, version: str = "1.0.0"):
     )
 
 
-def test_reverify_failure_marks_pending_and_reports_without_pausing(update_env, monkeypatch, tmp_path):
-    catalog = _build_catalog_with_flaky_verify(tmp_path, verify_exit_code=1)  # credential now invalid
+def test_reverify_failure_marks_pending_and_reports_without_pausing(
+    update_env, monkeypatch, tmp_path
+):
+    catalog = _build_catalog_with_flaky_verify(
+        tmp_path, verify_exit_code=1
+    )  # credential now invalid
     monkeypatch.setattr(update_cmd, "claude_kit_repo_dir", lambda: catalog)
     monkeypatch.setattr(update_cmd, "registry_json_path", lambda: catalog / "registry.json")
     _seed_installed_done(update_env)
@@ -87,7 +91,9 @@ def test_reverify_failure_marks_pending_and_reports_without_pausing(update_env, 
 
 
 def test_reverify_success_keeps_status_done(update_env, monkeypatch, tmp_path):
-    catalog = _build_catalog_with_flaky_verify(tmp_path, verify_exit_code=0)  # credential still valid
+    catalog = _build_catalog_with_flaky_verify(
+        tmp_path, verify_exit_code=0
+    )  # credential still valid
     monkeypatch.setattr(update_cmd, "claude_kit_repo_dir", lambda: catalog)
     monkeypatch.setattr(update_cmd, "registry_json_path", lambda: catalog / "registry.json")
     _seed_installed_done(update_env)

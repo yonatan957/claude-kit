@@ -44,7 +44,9 @@ def install_plugin(
             f"plugins.{name}: install failed: {install_result.stderr.strip()}"
         )
 
-    return PluginEntry(source=source, marketplace=marketplace, version=component.version, enabled=True)
+    return PluginEntry(
+        source=source, marketplace=marketplace, version=component.version, enabled=True
+    )
 
 
 def update_plugin(name: str, entry: PluginEntry, commands: PluginMarketplaceCommands) -> None:

@@ -21,7 +21,9 @@ def test_add_refuses_naming_collision_without_confirmation(cli_env, monkeypatch)
         add_remove_cmd.run_add("skills", "fixture-skill")
 
     assert exc_info.value.exit_code == 1
-    assert (skills_dir / "fixture-skill" / "SKILL.md").read_text() == "hand-placed, not from claude-kit"
+    assert (
+        skills_dir / "fixture-skill" / "SKILL.md"
+    ).read_text() == "hand-placed, not from claude-kit"
     if cli_env["installed_path"].exists():
         installed = json.loads(cli_env["installed_path"].read_text(encoding="utf-8"))
         assert "fixture-skill" not in installed.get("skills", {})
@@ -38,4 +40,6 @@ def test_add_tracks_as_user_sourced_when_collision_confirmed(cli_env, monkeypatc
 
     installed = json.loads(cli_env["installed_path"].read_text(encoding="utf-8"))
     assert installed["skills"]["fixture-skill"]["source"] == "user"
-    assert (skills_dir / "fixture-skill" / "SKILL.md").read_text() == "hand-placed, not from claude-kit"
+    assert (
+        skills_dir / "fixture-skill" / "SKILL.md"
+    ).read_text() == "hand-placed, not from claude-kit"

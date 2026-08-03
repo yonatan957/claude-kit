@@ -50,7 +50,9 @@ def test_genuinely_new_finding_after_prior_announcement_is_shown():
 
 
 def test_pending_config_count_is_rendered():
-    findings = Findings(local_cli_version="0.1.0", latest_cli_version="0.1.0", pending_config_count=2)
+    findings = Findings(
+        local_cli_version="0.1.0", latest_cli_version="0.1.0", pending_config_count=2
+    )
 
     message, announced = render_notice(findings, announced=[])
 

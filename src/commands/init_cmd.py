@@ -48,7 +48,9 @@ def ensure_local_directories() -> None:
 def deploy_genie_claude() -> None:
     """Idempotent: overwrites claude-kit's own baseline file in place —
     distinct from the developer's own CLAUDE.md (FR-003)."""
-    (claude_dir() / GENIE_CLAUDE_FILENAME).write_text(GENIE_CLAUDE_BASELINE_CONTENT, encoding="utf-8")
+    (claude_dir() / GENIE_CLAUDE_FILENAME).write_text(
+        GENIE_CLAUDE_BASELINE_CONTENT, encoding="utf-8"
+    )
 
 
 def append_claude_md_reference() -> None:

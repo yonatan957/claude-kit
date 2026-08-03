@@ -114,7 +114,9 @@ def install_script_component(
     if install_script is not None:
         result = _run_script(install_script)
         if result.returncode != 0:
-            raise ScriptInstallError(f"{category}.{name}: install.sh failed: {result.stderr.strip()}")
+            raise ScriptInstallError(
+                f"{category}.{name}: install.sh failed: {result.stderr.strip()}"
+            )
 
     # Persist *every* declared answer (not just secret: true ones) to a
     # restricted per-component file — installed.json can only ever hold the
@@ -137,7 +139,9 @@ def install_script_component(
     if config_script is not None:
         result = _run_script(config_script, env_vars)
         if result.returncode != 0:
-            raise ScriptInstallError(f"{category}.{name}: config.sh failed: {result.stderr.strip()}")
+            raise ScriptInstallError(
+                f"{category}.{name}: config.sh failed: {result.stderr.strip()}"
+            )
 
     mcp_registered = False
     if category == "mcps" and component.mcp_config is not None:
@@ -203,6 +207,8 @@ def remove_script_component(
     if uninstall_script is not None:
         result = _run_script(uninstall_script)
         if result.returncode != 0:
-            raise ScriptInstallError(f"{category}.{name}: uninstall.sh failed: {result.stderr.strip()}")
+            raise ScriptInstallError(
+                f"{category}.{name}: uninstall.sh failed: {result.stderr.strip()}"
+            )
 
     delete_secret_file(env_dir / f"{name}.env")

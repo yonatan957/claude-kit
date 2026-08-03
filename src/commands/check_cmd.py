@@ -13,7 +13,12 @@ from datetime import UTC, datetime
 import typer
 
 from src.core.notice import render_notice
-from src.core.paths import catalog_remote_url, claude_kit_repo_dir, installed_json_path, state_json_path
+from src.core.paths import (
+    catalog_remote_url,
+    claude_kit_repo_dir,
+    installed_json_path,
+    state_json_path,
+)
 from src.core.state_model import Findings, InstalledRecord, NotificationSnapshot
 from src.installers.catalog_sync import CatalogSyncError, sync_catalog
 

@@ -15,7 +15,9 @@ def test_check_writes_non_null_message_and_matching_findings(tmp_path, monkeypat
     monkeypatch.setattr(check_cmd, "installed_json_path", lambda: installed_path)
     monkeypatch.setattr(check_cmd, "catalog_remote_url", lambda: "unused://fixture")
     monkeypatch.setattr(
-        check_cmd, "sync_catalog", lambda url, repo_dir=None: SyncResult(commit="newcommit", synced=True)
+        check_cmd,
+        "sync_catalog",
+        lambda url, repo_dir=None: SyncResult(commit="newcommit", synced=True),
     )
     monkeypatch.setattr(check_cmd, "_latest_cli_version", lambda: "0.2.0")
 
@@ -61,7 +63,11 @@ def test_check_counts_pending_configurations(tmp_path, monkeypatch):
                         "source": "claude-kit",
                         "version": "1.0.0",
                         "installed_hash": "x",
-                        "config": {"status": "done", "verified_at": "2026-08-03T00:00:00Z", "answers": {}},
+                        "config": {
+                            "status": "done",
+                            "verified_at": "2026-08-03T00:00:00Z",
+                            "answers": {},
+                        },
                     },
                 },
             }

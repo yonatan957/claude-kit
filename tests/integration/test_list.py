@@ -24,7 +24,9 @@ def list_env(tmp_path, monkeypatch):
 
 
 def test_list_fails_clearly_when_no_local_cache(tmp_path, monkeypatch):
-    monkeypatch.setattr(list_cmd, "registry_json_path", lambda: tmp_path / "missing" / "registry.json")
+    monkeypatch.setattr(
+        list_cmd, "registry_json_path", lambda: tmp_path / "missing" / "registry.json"
+    )
 
     with pytest.raises(typer.Exit) as exc_info:
         list_cmd.run_list()
@@ -61,7 +63,11 @@ def test_list_shows_every_component_with_correct_status(list_env, capsys):
                         "source": "claude-kit",
                         "version": "1.0.0",
                         "installed_hash": "x",
-                        "config": {"status": "done", "verified_at": "2026-08-03T00:00:00Z", "answers": {}},
+                        "config": {
+                            "status": "done",
+                            "verified_at": "2026-08-03T00:00:00Z",
+                            "answers": {},
+                        },
                     }
                 },
             }
@@ -96,7 +102,11 @@ def test_list_rows_reflect_installed_current_config_active(list_env):
                         "source": "claude-kit",
                         "version": "1.0.0",
                         "installed_hash": "x",
-                        "config": {"status": "done", "verified_at": "2026-08-03T00:00:00Z", "answers": {}},
+                        "config": {
+                            "status": "done",
+                            "verified_at": "2026-08-03T00:00:00Z",
+                            "answers": {},
+                        },
                     }
                 },
             }

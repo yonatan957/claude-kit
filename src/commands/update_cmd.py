@@ -74,7 +74,11 @@ def _all_managed_items(registry: Registry, installed: InstalledRecord) -> list[P
 
 
 def _refresh_one(
-    item: PlanItem, registry: Registry, installed: InstalledRecord, pending: list[str], failed: list[str]
+    item: PlanItem,
+    registry: Registry,
+    installed: InstalledRecord,
+    pending: list[str],
+    failed: list[str],
 ) -> None:
     category, name, component = item.category, item.name, item.component
     if component.handler == "content":

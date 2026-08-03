@@ -56,7 +56,9 @@ class NoTTYError(Exception):
     still refuse cleanly, not hang, when no TTY backs that stdin)."""
 
 
-def _has_naming_collision(category: str, name: str, component: Component, installed: InstalledRecord) -> bool:
+def _has_naming_collision(
+    category: str, name: str, component: Component, installed: InstalledRecord
+) -> bool:
     """True if `name` already exists outside claude-kit's own tracking — a
     manually-placed ("user"-sourced) item — per FR-043. Never true for a name
     claude-kit already tracks (including a previously acknowledged "user"
@@ -75,14 +77,21 @@ def _has_naming_collision(category: str, name: str, component: Component, instal
     return False
 
 
-def _record_user_sourced(category: str, name: str, component: Component, installed: InstalledRecord) -> None:
+def _record_user_sourced(
+    category: str, name: str, component: Component, installed: InstalledRecord
+) -> None:
     """FR-043's confirmed outcome: track the manually-placed item as
     "user"-sourced without touching it (no copy, no registration)."""
     if component.handler == "content":
-        entry = ContentEntry(source="user", installed_hash=content_hash(component), installed_at=datetime.now(UTC))
+        entry = ContentEntry(
+            source="user", installed_hash=content_hash(component), installed_at=datetime.now(UTC)
+        )
     elif component.handler == "marketplace":
         entry = PluginEntry(
-            source="user", marketplace=component.marketplace or "", version=component.version, enabled=True
+            source="user",
+            marketplace=component.marketplace or "",
+            version=component.version,
+            enabled=True,
         )
     else:
         entry = ScriptEntry(
@@ -189,7 +198,9 @@ def _apply_remove(item: PlanItem, registry: Registry, installed: InstalledRecord
             remove_plugin(name, entry, registry.plugin_marketplace)
         installed.plugins.pop(name, None)
     elif component.handler == "script":
-        remove_script_component(category, name, claude_kit_repo_dir(), claude_settings_path(), env_dir())
+        remove_script_component(
+            category, name, claude_kit_repo_dir(), claude_settings_path(), env_dir()
+        )
         getattr(installed, category).pop(name, None)
 
 

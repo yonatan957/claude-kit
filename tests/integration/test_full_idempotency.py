@@ -38,11 +38,15 @@ def full_system_env(tmp_path, monkeypatch):
             lambda url, repo_dir=None: SyncResult(commit="fixed-commit", synced=True),
         )
         monkeypatch.setattr(
-            module, "_CONTENT_TARGET_DIRS", {"skills": lambda: skills_dir, "agents": lambda: agents_dir}
+            module,
+            "_CONTENT_TARGET_DIRS",
+            {"skills": lambda: skills_dir, "agents": lambda: agents_dir},
         )
 
     monkeypatch.setattr(
-        config_cmd, "_collect_answers", lambda name, component: {i.name: "testval" for i in component.inputs}
+        config_cmd,
+        "_collect_answers",
+        lambda name, component: {i.name: "testval" for i in component.inputs},
     )
 
     monkeypatch.setattr(list_cmd, "installed_json_path", lambda: installed_path)
@@ -52,7 +56,9 @@ def full_system_env(tmp_path, monkeypatch):
     monkeypatch.setattr(check_cmd, "state_json_path", lambda: state_path)
     monkeypatch.setattr(check_cmd, "catalog_remote_url", lambda: "unused://fixture")
     monkeypatch.setattr(
-        check_cmd, "sync_catalog", lambda url, repo_dir=None: SyncResult(commit="fixed-commit", synced=True)
+        check_cmd,
+        "sync_catalog",
+        lambda url, repo_dir=None: SyncResult(commit="fixed-commit", synced=True),
     )
 
     return {
@@ -105,5 +111,9 @@ def test_full_sequence_twice_is_idempotent(full_system_env, capsys):
     settings_json = json.loads(settings_second)
     assert list(settings_json.get("mcpServers", {}).keys()).count("fixture-mcp") == 1
 
-    skill_files = list((Path(full_system_env["installed_path"]).parent / ".claude" / "skills" / "fixture-skill").iterdir())
+    skill_files = list(
+        (
+            Path(full_system_env["installed_path"]).parent / ".claude" / "skills" / "fixture-skill"
+        ).iterdir()
+    )
     assert len(skill_files) == 1  # no duplicate file copies

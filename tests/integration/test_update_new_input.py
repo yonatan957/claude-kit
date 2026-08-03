@@ -25,7 +25,12 @@ def _build_catalog_with_new_required_input(tmp_path):
         "version": "1.0.0",
         "min_cli_version": "0.1.0",
         "types": [{"name": "tools", "handler": "script"}],
-        "plugin_marketplace": {"add": "true", "install": "true", "update": "true", "remove": "true"},
+        "plugin_marketplace": {
+            "add": "true",
+            "install": "true",
+            "update": "true",
+            "remove": "true",
+        },
         "tools": {
             "needs-new-input": {
                 "description": "d",
@@ -62,7 +67,11 @@ def test_update_new_required_input_marks_pending_without_pausing(update_env, mon
                         "source": "claude-kit",
                         "version": "0.9.0",
                         "installed_hash": "whatever",
-                        "config": {"status": "done", "verified_at": "2026-01-01T00:00:00Z", "answers": {}},
+                        "config": {
+                            "status": "done",
+                            "verified_at": "2026-01-01T00:00:00Z",
+                            "answers": {},
+                        },
                     }
                 },
             }

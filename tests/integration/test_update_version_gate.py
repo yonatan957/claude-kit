@@ -10,7 +10,9 @@ import typer
 from src.commands import update_cmd
 
 
-def test_update_halts_when_min_cli_version_exceeds_running_version(update_env, monkeypatch, tmp_path):
+def test_update_halts_when_min_cli_version_exceeds_running_version(
+    update_env, monkeypatch, tmp_path
+):
     high_version_catalog = tmp_path / "high_version_catalog"
     high_version_catalog.mkdir()
     registry_data = {
@@ -18,7 +20,12 @@ def test_update_halts_when_min_cli_version_exceeds_running_version(update_env, m
         "version": "1.0.0",
         "min_cli_version": "99.0.0",
         "types": [{"name": "skills", "handler": "content"}],
-        "plugin_marketplace": {"add": "true", "install": "true", "update": "true", "remove": "true"},
+        "plugin_marketplace": {
+            "add": "true",
+            "install": "true",
+            "update": "true",
+            "remove": "true",
+        },
     }
     registry_path = high_version_catalog / "registry.json"
     registry_path.write_text(json.dumps(registry_data))

@@ -105,7 +105,10 @@ def run_list() -> None:
     installed = _load_installed()
     rows = build_rows(registry, installed)
 
-    header = f"{'CATEGORY':<10} {'NAME':<24} {'INSTALLED':<10} {'CURRENT':<10} {'CONFIG':<10} {'ACTIVE':<8}"
+    header = (
+        f"{'CATEGORY':<10} {'NAME':<24} {'INSTALLED':<10} "
+        f"{'CURRENT':<10} {'CONFIG':<10} {'ACTIVE':<8}"
+    )
     typer.echo(header)
     typer.echo("-" * len(header))
     for row in rows:

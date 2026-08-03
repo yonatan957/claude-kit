@@ -39,7 +39,9 @@ def test_remove_unknown_name_not_in_catalog_or_installed_fails_non_zero(cli_env)
     assert exc_info.value.exit_code == 1
 
 
-def test_add_failing_lifecycle_script_fails_non_zero_and_leaves_no_state(tmp_path, monkeypatch, cli_env):
+def test_add_failing_lifecycle_script_fails_non_zero_and_leaves_no_state(
+    tmp_path, monkeypatch, cli_env
+):
     broken_catalog = tmp_path / "broken_catalog"
     (broken_catalog / "tools" / "broken-tool").mkdir(parents=True)
     (broken_catalog / "tools" / "broken-tool" / "install.sh").write_text("#!/bin/sh\nexit 1\n")
@@ -48,7 +50,12 @@ def test_add_failing_lifecycle_script_fails_non_zero_and_leaves_no_state(tmp_pat
         "version": "1.0.0",
         "min_cli_version": "0.1.0",
         "types": [{"name": "tools", "handler": "script"}],
-        "plugin_marketplace": {"add": "true", "install": "true", "update": "true", "remove": "true"},
+        "plugin_marketplace": {
+            "add": "true",
+            "install": "true",
+            "update": "true",
+            "remove": "true",
+        },
         "tools": {"broken-tool": {"description": "d", "handler": "script", "version": "1.0.0"}},
     }
     registry_path = broken_catalog / "registry.json"

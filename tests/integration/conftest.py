@@ -45,7 +45,9 @@ def cli_env(tmp_path, monkeypatch):
         lambda url, repo_dir=None: SyncResult(commit="fixture-commit", synced=True),
     )
     monkeypatch.setattr(
-        config_cmd, "_collect_answers", lambda name, component: {i.name: "testval" for i in component.inputs}
+        config_cmd,
+        "_collect_answers",
+        lambda name, component: {i.name: "testval" for i in component.inputs},
     )
 
     return paths
