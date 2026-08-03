@@ -132,3 +132,44 @@ def test_deselecting_an_installed_entry_switches_glyph_to_pending_removal(state)
 
     entry.selected = False
     assert glyph_for(selection_state(entry))[0] == "[X]"
+
+
+# --- Row truncation: no mid-word clipping at the terminal edge ---------------
+
+
+def _row_text(state: PickerState, index: int, width: int | None) -> str:
+    entry = state.visible_entries()[index]
+    return "".join(text for _, text in render_row(entry, is_cursor=False, width=width))
+
+
+def test_long_row_is_truncated_with_an_ellipsis(state):
+    """Regression: rows used to be hard-clipped mid-word by the terminal edge,
+    so a description ended like "for automat" and read as a crash."""
+    text = _row_text(state, 0, width=48)
+
+    assert len(text) <= 48
+    assert text.endswith("…")
+
+
+def test_truncation_never_eats_the_marker_or_name(state):
+    entry = state.visible_entries()[0]
+    text = _row_text(state, 0, width=40)
+
+    assert text.startswith("[")  # marker survives
+    assert entry.name in text  # identity survives
+
+
+def test_no_truncation_when_the_row_already_fits(state):
+    entry = state.visible_entries()[0]
+    text = _row_text(state, 0, width=200)
+
+    assert entry.component.description in text
+    assert "…" not in text
+
+
+def test_very_narrow_width_drops_the_description_entirely(state):
+    entry = state.visible_entries()[0]
+    text = _row_text(state, 0, width=len(entry.name) + 20)
+
+    assert entry.name in text
+    assert "—" not in text  # no dangling separator with nothing after it
