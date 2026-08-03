@@ -81,12 +81,12 @@ npm/
 - [ ] T024 [P] [US1] Implement the marketplace-handler installer (delegate install/remove to the catalog's `plugin_marketplace` command templates) in `src/installers/marketplace.py` per FR-034
 - [ ] T025 [P] [US1] Implement the surgical `mcpServers` block editor (locate the key's exact span via a JSON tokenizer, replace only that span) in `src/installers/settings_patch.py` per research.md #3/FR-038
 - [ ] T026 [P] [US1] Implement the restricted secret file writer/deleter (`chmod 600` on POSIX, owner-only ACL on Windows, one shared function so callers never branch on OS) in `src/installers/secrets.py` per FR-016/FR-039/research.md #7
-- [ ] T027 [US1] Implement the script-handler install sequence (`install.sh` → collect declared `inputs[]` → `config.sh` with `<UPPER_SNAKE_CASE>` env vars → merge `mcp_config` via T025 → `verify.sh`; on verify failure, deregister `mcp_config` immediately and mark `"failed"`) in `src/installers/script.py` per script-lifecycle.md/FR-035/FR-042 (depends on T025, T026)
+- [ ] T027 [US1] Implement the script-handler install sequence — accepting already-collected `inputs[]` answers as parameters (collection itself happens only in `commands/`/`ui/tui.py`, never in this module, per script-lifecycle.md): `install.sh` → `config.sh` with `<UPPER_SNAKE_CASE>` env vars → merge `mcp_config` via T025 → `verify.sh`; on verify failure, deregister `mcp_config` immediately and mark `"failed"` — in `src/installers/script.py` per script-lifecycle.md/FR-035/FR-042 (depends on T025, T026)
 - [ ] T028 [US1] Implement the script-handler removal sequence (strip `mcp_config` first → `uninstall.sh` → delete `env.d/<name>.env` → delete the `installed.json` entry) in `src/installers/script.py` per FR-036 (depends on T027)
 - [ ] T029 [P] [US1] Implement `claude-kit init` (verify a valid Claude Code environment, create local dirs/baseline files idempotently, deploy `genie-claude.md`, append the `CLAUDE.md` reference line only if absent, then launch `config`) in `src/commands/init_cmd.py` per FR-001–FR-005 (depends on T005, T009)
 - [ ] T030 [P] [US1] Implement Textual picker Step 1 — one scrollable list across all declared categories, live per-category selection counts, up/down navigation + toggle, cancel with zero changes, a dedicated search mode filtering the catalog (plus configured external sources) that pins newly-selected items to the top on return, deselected-active items flagged as pending removal, optional category pre-filter, and a single "Approve & install" action — in `src/ui/tui.py` per FR-006–FR-013
 - [ ] T031 [US1] Implement Textual Step 2 sequential configure prompts (one input at a time, masked entry when `secret: true`) in `src/ui/tui.py` per FR-014/FR-015 (depends on T030)
-- [ ] T032 [US1] Implement `claude-kit config [type]` (run picker Step 1, apply the full add/remove diff plan in one pass through the installers, then run Step 2 for every newly selected component with declared `inputs[]`; refuse with a clear error, no hang, if not run in a TTY) in `src/commands/config_cmd.py` per FR-006–FR-016/cli-commands.md (depends on T008, T023, T024, T027, T030, T031)
+- [ ] T032 [US1] Implement `claude-kit config [type]` (run picker Step 1, apply the full add/remove diff plan in one pass through the installers, then run Step 2 for every newly selected component with declared `inputs[]`; refuse with a clear error, no hang, if not run in a TTY) in `src/commands/config_cmd.py` per FR-006–FR-016/cli-commands.md (depends on T007, T008, T009, T023, T024, T027, T030, T031)
 - [ ] T033 [US1] Implement the naming-collision confirmation path (refuse to silently overwrite a `"user"`-sourced component; require an explicit, distinct confirmation before proceeding) in `src/commands/config_cmd.py` and `src/ui/tui.py` per FR-043 (depends on T032)
 - [ ] T034 [US1] Wire `init` and `config` into `src/cli.py` (depends on T010, T029, T032)
 
@@ -105,10 +105,11 @@ npm/
 - [ ] T035 [P] [US2] Integration test: `claude-kit add <type> <name>` installs with no picker shown, drives Step 2 configure prompts when inputs are required, and exits `0` in `tests/integration/test_add.py`
 - [ ] T036 [P] [US2] Integration test: `claude-kit remove <type> <name>` removes all files/registrations and is a no-op success (exit `0`) when run a second time in `tests/integration/test_remove.py`
 - [ ] T037 [P] [US2] Integration test: add/remove failures (unknown name, failing lifecycle script) exit non-zero with a clear message and leave no partial/unlabeled state in `tests/integration/test_add_remove_failures.py`
+- [ ] T037B [P] [US2] Integration test: `claude-kit add <type> <name>` on a name colliding with an existing `"user"`-sourced entry is refused without explicit, distinct confirmation in `tests/integration/test_add_naming_collision.py`
 
 ### Implementation for User Story 2
 
-- [ ] T038 [US2] Implement `claude-kit add <type> <name>` (non-interactive install via the type's installer, then Step 2 configure if `inputs[]` is declared, clear non-zero-exit errors on unknown type/name/handler failure) in `src/commands/add_remove_cmd.py` per FR-017/FR-019/FR-020 (depends on T023, T024, T027, T031)
+- [ ] T038 [US2] Implement `claude-kit add <type> <name>` (non-interactive install via the type's installer, then Step 2 configure if `inputs[]` is declared, clear non-zero-exit errors on unknown type/name/handler failure; refuse to silently overwrite a `"user"`-sourced naming collision — print the same distinct-confirmation prompt used by T033 rather than proceeding silently) in `src/commands/add_remove_cmd.py` per FR-017/FR-019/FR-020/FR-043 (depends on T007, T009, T023, T024, T027, T031, T033)
 - [ ] T039 [US2] Implement `claude-kit remove <type> <name>` (non-interactive removal via the type's installer, idempotent no-op if already removed, clear non-zero-exit errors on handler failure) in `src/commands/add_remove_cmd.py` per FR-018/FR-020/FR-037 (depends on T023, T024, T028)
 - [ ] T040 [US2] Wire `add` and `remove` into `src/cli.py` (depends on T010, T038, T039)
 
@@ -202,7 +203,7 @@ npm/
 - **Setup (Phase 1)**: No dependencies — start immediately
 - **Foundational (Phase 2)**: Depends on Setup — BLOCKS all user stories
 - **User Story 1 (Phase 3)**: Depends only on Foundational
-- **User Story 2 (Phase 4)**: Depends only on Foundational; reuses US1's installers (T023, T024, T027, T028, T031) but adds no new dependency on US1's commands/UI
+- **User Story 2 (Phase 4)**: Depends on Foundational; reuses US1's installers (T023, T024, T027, T028, T031) and, for the naming-collision confirmation path (FR-043), also depends on US1's T033
 - **User Story 3 (Phase 5)**: Depends only on Foundational; reuses US1's installers (T023, T024, T027)
 - **User Story 4 (Phase 6)**: Depends only on Foundational
 - **User Story 5 (Phase 7)**: Depends only on Foundational
