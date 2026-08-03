@@ -30,10 +30,10 @@ npm/
 
 **Purpose**: Project scaffolding and shared test fixtures
 
-- [ ] T001 Create the full project skeleton per plan.md's Project Structure: `src/core/`, `src/installers/`, `src/commands/`, `src/ui/`, `src/notify/`, `src/cli.py`, `tests/contract/`, `tests/integration/`, `tests/unit/`, each with an `__init__.py` where it's a package
-- [ ] T002 Initialize `pyproject.toml` for a Python 3.11+ project with dependencies: `typer`, `textual`, `pydantic>=2`, `pytest`, `pytest-asyncio` (for Textual `Pilot` tests)
-- [ ] T003 [P] Configure ruff + black lint/format settings in `pyproject.toml`
-- [ ] T004 [P] Create a fixture Catalog Repo in `tests/fixtures/registry_repo/registry.json` containing one `content`-handler skill, one `script`-handler tool with a non-secret input, one `script`-handler MCP server with a secret input, and one `marketplace`-handler plugin, matching `contracts/registry-schema.json`
+- [X] T001 Create the full project skeleton per plan.md's Project Structure: `src/core/`, `src/installers/`, `src/commands/`, `src/ui/`, `src/notify/`, `src/cli.py`, `tests/contract/`, `tests/integration/`, `tests/unit/`, each with an `__init__.py` where it's a package
+- [X] T002 Initialize `pyproject.toml` for a Python 3.11+ project with dependencies: `typer`, `textual`, `pydantic>=2`, `pytest`, `pytest-asyncio` (for Textual `Pilot` tests)
+- [X] T003 [P] Configure ruff + black lint/format settings in `pyproject.toml`
+- [X] T004 [P] Create a fixture Catalog Repo in `tests/fixtures/registry_repo/registry.json` containing one `content`-handler skill, one `script`-handler tool with a non-secret input, one `script`-handler MCP server with a secret input, and one `marketplace`-handler plugin, matching `contracts/registry-schema.json`
 
 ---
 
