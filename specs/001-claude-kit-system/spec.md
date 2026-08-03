@@ -4,6 +4,8 @@
 
 **Created**: 2026-08-02
 
+**Last Updated**: 2026-08-03 (Phase 2 refinement — lightweight inline TUI, installed-only `list`)
+
 **Status**: Draft
 
 **Input**: User description: "Define the complete, end-to-end system specification for 'claude-kit' covering the CLI Command Set, the Two-Step TUI, the Three JSON State engines, and installation lifecycles"
@@ -67,16 +69,17 @@ A developer wants their installed skills, agents, plugins, tools, and MCP server
 
 ### User Story 4 - Discovering Current State (Priority: P4)
 
-A developer wants a single place to see everything claude-kit knows about: what's available, what's installed, whether it's current, whether it's configured, and whether it's active — so they can decide what to add, remove, or fix.
+A developer wants a single place to see everything they currently have installed via claude-kit: whether it's current, whether it's configured, and whether it's active — so they can decide what to remove or fix. Components they have never installed are not part of this view; that role stays with the interactive picker's browsing/search experience.
 
 **Why this priority**: This is a read-only convenience that makes Stories 1–3 easier to use correctly, but the system delivers value without it (a developer could otherwise infer state from the interactive picker). It's ranked fourth as a supporting, non-blocking capability.
 
-**Independent Test**: With a mix of installed, not-installed, up-to-date, outdated, configured, and pending components, run the list command and verify every component's type, version status, configuration status, and active/inactive state is shown clearly and correctly.
+**Independent Test**: With a mix of installed components in various freshness/configuration states, plus at least one additional catalog component that has never been installed, run the list command and verify only the installed components appear, each showing its category, version status, configuration status, and active/inactive state, clearly and correctly.
 
 **Acceptance Scenarios**:
 
-1. **Given** a developer has a mix of installed and available components, **When** they run the list command, **Then** every catalog component is shown with its type, whether it's installed, whether the installed copy matches the latest catalog version, whether its configuration is complete or pending, and whether it is currently active.
+1. **Given** a developer has a mix of installed components and additional components that exist in the catalog but were never installed, **When** they run the list command, **Then** only the installed components are shown, each with its category, whether the installed copy matches the latest catalog version, whether its configuration is complete or pending, and whether it is currently active.
 2. **Given** a component's configuration is incomplete, **When** it appears in the list, **Then** it is clearly distinguishable from fully configured components.
+3. **Given** a component exists in the catalog but has never been installed, **When** the developer runs the list command, **Then** that component does not appear in the output at all.
 
 ---
 
@@ -109,6 +112,7 @@ A developer starts a normal Claude Code session and, without doing anything extr
 - What happens if a developer cancels out of the sequential configuration prompts partway through (some components configured, others not)?
 - What happens when the same component name exists under two different types (e.g., a tool and an MCP server share a name)?
 - What happens when disk space or file permissions prevent writing to the restricted local credential storage?
+- What happens when the developer runs the list command and has zero installed components — is a clear, empty-state message shown rather than a blank or confusing output?
 
 ## Requirements *(mandatory)*
 
@@ -123,12 +127,12 @@ A developer starts a normal Claude Code session and, without doing anything extr
 ### Interactive Configuration (Two-Step Flow)
 
 - **FR-006**: System MUST present a single, scrollable list covering every declared component category, showing a live count of current selections per category.
-- **FR-007**: System MUST support keyboard navigation (moving the highlighted item up and down) and a toggle action to select or deselect the highlighted item.
+- **FR-007**: System MUST support keyboard navigation (moving the highlighted item up and down) and MUST toggle selection of the highlighted item using the `Enter` key; no other key (e.g., Space) toggles selection.
 - **FR-008**: System MUST support cancelling out of the configuration flow at any point before approval, leaving no changes applied.
-- **FR-009**: System MUST support a dedicated search mode, entered and exited by a single dedicated action, that lets the developer filter the combined catalog (and any configured external sources) by typed text.
+- **FR-009**: System MUST support a search mode entered and exited solely by pressing `Tab`, acting as a pure, immediate toggle between the main picker and search results — with no separate "exit search" button, row, or control of any kind — that lets the developer filter the combined catalog (and any configured external sources) by typed text.
 - **FR-010**: System MUST pin any items selected while in search mode to the top of the main list once the developer returns to browsing.
 - **FR-011**: System MUST visually flag any currently-active component that the developer deselects as a pending removal, distinct from a never-installed item.
-- **FR-012**: System MUST offer a single, unambiguous final action ("Approve & install") that applies every pending addition and removal from the current session in one pass.
+- **FR-012**: System MUST offer a single, unambiguous final action ("Approve & Install") represented as a dedicated row at the bottom of the list, invoked only by navigating the highlight to that row and pressing `Enter`; this action applies every pending addition and removal from the current session in one pass. No other keyboard shortcut (e.g., a single-letter shortcut such as `a`) MAY trigger this action.
 - **FR-013**: System MUST support narrowing the initial list to a single requested category when the developer specifies one, without hiding the ability to still act on other categories' existing state.
 - **FR-014**: System MUST, immediately after approval, sequentially prompt the developer for any input a newly selected component requires, one component at a time.
 - **FR-015**: System MUST mask on-screen entry of any input value marked sensitive (e.g., API keys, tokens) during configuration prompts.
@@ -151,7 +155,7 @@ A developer starts a normal Claude Code session and, without doing anything extr
 
 ### Discovery (Listing State)
 
-- **FR-026**: System MUST provide an action that displays every catalog component along with: its category, whether it is installed, whether the installed copy is current relative to the latest catalog content, whether its configuration is complete or pending, and whether it is presently active.
+- **FR-026**: System MUST provide an action that displays only the components currently installed on the developer's machine — never the full catalog of available-but-not-installed components — along with, for each: its category, whether the installed copy is current relative to the latest catalog content, whether its configuration is complete or pending, and whether it is presently active.
 - **FR-027**: System MUST visually distinguish components with incomplete/pending configuration from those that are fully configured within this view.
 
 ### Background Update Awareness
@@ -183,6 +187,12 @@ A developer starts a normal Claude Code session and, without doing anything extr
 - **FR-043**: When the developer tries to add or select a catalog component whose name matches an existing item that was not installed by claude-kit (i.e., placed there manually), system MUST refuse to overwrite it automatically and MUST clearly warn the developer of the naming collision, requiring an explicit, distinct confirmation before proceeding.
 - **FR-044**: When `update` re-runs a verification step for an already-configured script-style component and that verification fails (e.g., a previously working credential is no longer valid), system MUST mark that component's configuration status as pending again and include it in the update's end-of-run summary, without pausing the update to collect a new value.
 
+### TUI Presentation & Interaction (Phase 2 Refinement)
+
+- **FR-045**: System MUST present the interactive configuration flow as a lightweight, inline experience within the developer's existing terminal scrollback — it MUST NOT take over the full terminal screen (no full-screen/alternate-screen app) and MUST NOT clear or hide the developer's existing scrollback buffer at any point during entry, use, or exit.
+- **FR-046**: System MUST limit the interactive configuration flow's on-screen presentation to the picker list, current selections, and minimal status/help text; it MUST NOT display non-essential visual chrome such as decorative buttons, a theme-switcher, or other controls that do not directly support browsing, searching, selecting, or approving components.
+- **FR-047**: System MUST render each item's selection state using a stable, always-visible marker distinguishing exactly three states: unselected (`[ ]`), selected (`[✓]`, rendered in a positive/affirming color such as green), and selected-for-removal (`[X]`, rendered in a warning color such as red) — and this marker MUST remain visible and unchanged in meaning as the highlighted row moves or focus shifts between the main list and search results.
+
 ### Key Entities
 
 - **Component**: Anything a developer can add through claude-kit — a Skill, Agent, Plugin, Tool, or MCP Server. Each has a category, a description, a declared handler behavior (content copy, marketplace delegation, or scripted lifecycle), and, optionally, a list of inputs it requires from the developer.
@@ -199,11 +209,12 @@ A developer starts a normal Claude Code session and, without doing anything extr
 - **SC-002**: Running any claude-kit action twice in a row with no other changes in between produces byte-identical local tracking state after the second run compared to after the first (zero duplicate entries observed across 100% of repeated-run tests).
 - **SC-003**: Zero real credential values are ever found in the shared, non-restricted tracking file across all tested installs — 100% of recorded credential fields contain only the masked placeholder.
 - **SC-004**: Starting a new session never takes perceptibly longer because of claude-kit's notification feature, regardless of whether a background check is in progress at that moment.
-- **SC-005**: A developer can determine the install, freshness, configuration, and active status of any given component in under 10 seconds using the discovery view, without opening any file directly.
+- **SC-005**: A developer can determine the freshness, configuration, and active status of any installed component in under 10 seconds using the discovery view, without opening any file directly, and without that view being cluttered by components they have never installed.
 - **SC-006**: The update action never pauses for developer input in 100% of test runs, including runs where new configuration becomes required as a result of the update.
 - **SC-007**: After any sequence of install, update, or remove actions, every setting and value in the developer's shared settings file that claude-kit does not own remains exactly as it was beforehand, verified byte-for-byte, in 100% of tested scenarios.
 - **SC-008**: A developer's personal project guidance file retains 100% of its original content (aside from at most one added reference line) after any number of claude-kit runs.
 - **SC-009**: A developer is never shown the same background-check finding more than once after having already seen it, across consecutive sessions with no new findings.
+- **SC-010**: A developer's terminal scrollback content from before launching the interactive configuration flow is fully intact and scrollable-to immediately after the flow exits, in 100% of tested runs, and the flow never occupies the full terminal screen.
 
 ## Assumptions
 
