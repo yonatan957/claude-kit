@@ -1,5 +1,5 @@
 """Textual TUI: two-step picker (FR-006-FR-013) + sequential configure
-prompts (FR-014/FR-015, added in T031).
+prompts (FR-014/FR-015).
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from textual.binding import Binding
 from textual.reactive import reactive
 from textual.widgets import Footer, Header, Input, ListItem, ListView, Static
 
-from src.core.state_model import CategoryName, Component, InstalledRecord, Registry
+from src.core.state_model import CategoryName, Component, ComponentInput, InstalledRecord, Registry
 
 _CATEGORIES: tuple[CategoryName, ...] = ("skills", "agents", "plugins", "tools", "mcps")
 
@@ -185,4 +185,54 @@ class PickerApp(App[dict[str, set[str]] | None]):
 
     def action_cancel(self) -> None:
         self.cancelled = True
+        self.exit(None)
+
+
+class ConfigureApp(App[dict[str, str] | None]):
+    """Step 2: sequential configure prompts for one component's declared
+    inputs (FR-014/FR-015) — one input at a time, masked entry when
+    `secret: true`. Returns the collected answers, or None if cancelled."""
+
+    CSS = """
+    #prompt-label { padding: 1; }
+    #prompt-input { margin: 0 1; }
+    """
+
+    BINDINGS = [Binding("escape", "cancel", "Cancel")]
+
+    def __init__(self, component_name: str, inputs: list[ComponentInput]) -> None:
+        super().__init__()
+        self.component_name = component_name
+        self.inputs = inputs
+        self.answers: dict[str, str] = {}
+        self._current_index = 0
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Static(id="prompt-label")
+        yield Input(id="prompt-input")
+        yield Footer()
+
+    def on_mount(self) -> None:
+        self._show_current_prompt()
+
+    def _show_current_prompt(self) -> None:
+        current = self.inputs[self._current_index]
+        label = self.query_one("#prompt-label", Static)
+        label.update(f"{self.component_name}: {current.label}")
+        field = self.query_one("#prompt-input", Input)
+        field.value = ""
+        field.password = current.secret
+        field.focus()
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        current = self.inputs[self._current_index]
+        self.answers[current.name] = event.value
+        self._current_index += 1
+        if self._current_index >= len(self.inputs):
+            self.exit(self.answers)
+        else:
+            self._show_current_prompt()
+
+    def action_cancel(self) -> None:
         self.exit(None)
