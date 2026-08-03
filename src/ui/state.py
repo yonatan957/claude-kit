@@ -1,7 +1,13 @@
 """The picker's interaction state machine (FR-007/FR-009/FR-012).
 
-No `prompt_toolkit` import: the model stays testable without a terminal, and
-`keys.py` maps one keypress to one method here.
+Deliberately imports nothing from `prompt_toolkit`, so the entire interaction
+model can be exercised without a terminal — see `tests/unit/test_picker_state.py`,
+which drives every rule here as plain method calls. `keys.py` is a thin adapter
+that maps one keypress to one method on this class and does nothing else.
+
+Two modes, with `Tab` as the only edge between them in either direction. The
+visible row list is always derived, never stored, so pinning and filtering
+cannot drift out of sync with `entries`.
 """
 
 from __future__ import annotations
@@ -40,7 +46,12 @@ class PickerState:
         return picker.ordered_entries(self.entries)
 
     def row_count(self) -> int:
-        # Browse appends the sentinel approve row; search does not.
+        """Rows the cursor can reach.
+
+        Browse mode appends the sentinel "Approve & Install" row after the
+        entries; search mode does not, which is what makes approval
+        unreachable from search (FR-012).
+        """
         return len(self.visible_entries()) + (1 if self.mode is Mode.BROWSE else 0)
 
     def on_approve_row(self) -> bool:

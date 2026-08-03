@@ -1,25 +1,19 @@
 <!--
 Sync Impact Report
-Version change: 1.0.0 → 1.1.0 (minor: new principle added)
-Modified principles: n/a
-Added sections:
-  - Core Principle VI (Python File Line Limit)
+Version change: 1.1.0 -> 1.2.0 (minor: Principle VI measurement redefined)
+Modified principles:
+  - Core Principle VI (Python File Line Limit) - the cap is now measured in
+    lines of code (non-blank, non-comment) rather than total physical lines,
+    and mechanical enforcement is made explicit
+Added sections: none
 Removed sections: none
 Templates requiring updates:
-  - .specify/templates/plan-template.md: ✅ no change needed — its
-    "Constitution Check" section already defers dynamically to this file
-  - .specify/templates/spec-template.md: ✅ no change needed — no
-    principle-specific structural requirements introduced
-  - .specify/templates/tasks-template.md: ✅ no change needed — task
-    categories remain compatible; the new file-length gate is enforced at
-    review time per the Development Workflow section, not via new task types
-  - .claude/skills/speckit-*/SKILL.md: ✅ reviewed, no outdated
-    agent-specific or CLAUDE-only references found requiring generic-ization
-  - README.md / docs/quickstart.md: ⚠ pending — neither file exists yet in
-    this greenfield repository; create them to reference these principles
-    when the corresponding code (core/, installers/, commands/,
-    claude-kit-notify) is first scaffolded
-Follow-up TODOs: none blocking; see ⚠ item above for future documentation work
+  - .specify/templates/*.md: no change needed - none encode the metric
+  - tests/contract/test_file_line_limit.py: UPDATED in the same change
+  - specs/001-claude-kit-system/research.md 1b: UPDATED (decision superseded)
+  - specs/001-claude-kit-system/plan.md: UPDATED (Complexity Tracking reduced
+    from 8 deferred files to 4)
+Follow-up TODOs: none
 -->
 
 # claude-kit Constitution
@@ -92,15 +86,28 @@ time, regardless of whether they need fresh data that instant.
 
 ### VI. Python File Line Limit
 
-No Python source file may exceed 90 lines of code. Any logic requiring more
-space MUST be modularized into single-responsibility sub-modules (e.g.,
-splitting screens and widgets out of a monolithic TUI file rather than
-growing it indefinitely).
+No Python source file under `src/` may exceed 90 **lines of code**, measured
+as physical lines that are neither blank nor comment-only. Docstrings count
+(they occupy a reader's attention); blank lines and `#` comments do not. Any
+logic requiring more space MUST be modularized into single-responsibility
+sub-modules (e.g., splitting screens and widgets out of a monolithic TUI file
+rather than growing it indefinitely).
+
+The limit MUST be enforced mechanically by
+`tests/contract/test_file_line_limit.py`, not by reviewer judgment.
 
 **Rationale**: A hard per-file cap forces decomposition into
 single-responsibility units before a file becomes an unreviewable grab-bag
 of unrelated logic, keeping every module easy to read, test, and reuse in
 isolation.
+
+**On the measurement**: an earlier revision counted *total physical lines*.
+That was measured against the codebase and abandoned — it penalised
+documentation rather than complexity. Four files were in violation purely for
+being well-commented (`core/diffing.py`: 99 total but 72 code lines), and
+under it, docstrings were deleted from `src/ui/state.py` solely to fit. A cap
+that makes code less documented is working against its own rationale, so the
+metric now matches the wording it always had: *lines of code*.
 
 ## Additional Constraints
 
@@ -140,8 +147,9 @@ Principles before merge:
 - Changes to the `claude-kit-notify` startup hook MUST be checked for any new
   synchronous network, git, or subprocess-blocking call; such work MUST be
   moved into the detached `claude-kit check` subprocess.
-- Any Python file that grows past 90 lines MUST be split into
-  single-responsibility sub-modules before merge.
+- Any Python file that grows past 90 lines of code MUST be split into
+  single-responsibility sub-modules before merge. This is checked by
+  `tests/contract/test_file_line_limit.py`; a reviewer never has to count.
 
 Complexity or deviation from these gates MUST be explicitly justified in the
 pull request description; unjustified deviations MUST block merge.
@@ -166,4 +174,4 @@ Principles and the Development Workflow gates above. Any complexity that
 appears to conflict with a principle MUST be justified in writing in the PR
 description or rejected.
 
-**Version**: 1.1.0 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-08-03
+**Version**: 1.2.0 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-08-03

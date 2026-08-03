@@ -22,9 +22,21 @@ All items below were open technical decisions in the Technical Context, not spec
 
 ## 1b. Line-count measurement for Constitution Principle VI
 
-- **Decision**: count **total physical lines per file** (blanks, comments, and docstrings all included); enforce with a contract test over `src/**/*.py`.
-- **Rationale**: The constitution says "90 lines of code" without defining it, and the two readings differ materially against the current tree — 11 files violate on total lines, 7 on non-blank/non-comment lines. Total physical lines is the strictest reading, requires no AST parsing, cannot be gamed by reformatting, and matches how a reviewer eyeballs a file's length. Making it mechanical (a test, not a review checklist) is the part that actually matters: the rule was ratified on 2026-08-03 and by then 11 files already violated it, which is exactly what happens to review-enforced limits.
-- **Alternatives considered**: non-blank/non-comment SLOC — closer to the literal phrase "lines of code" and more forgiving of docstrings, but requires deciding how docstrings count and invites arguments at review time; a `ruff` plugin — no built-in rule for per-file length exists in the configured rule set (`E`, `F`, `I`, `UP`, `B`), so a small contract test is the lighter path.
+> **Superseded 2026-08-03 by §1d, after measuring it against the codebase.** The original decision is kept here because the reversal is the useful part of the record.
+
+- **Original decision**: count **total physical lines per file** (blanks, comments, and docstrings all included); enforce with a contract test over `src/**/*.py`.
+- **Original rationale**: The constitution says "90 lines of code" without defining it, and the two readings differ materially — 11 files violate on total lines, 7 on non-blank/non-comment lines. Total physical lines is the strictest reading, requires no AST parsing, cannot be gamed by reformatting, and matches how a reviewer eyeballs a file's length.
+
+## 1d. Line-count measurement, corrected (constitution v1.2.0)
+
+- **Decision**: count **lines of code** — physical lines that are neither blank nor comment-only. Docstrings count; blank lines and `#` comments do not.
+- **What changed the decision**: implementing Phase 2 under the total-lines rule produced three concrete bad outcomes, none of which were predictable from the armchair:
+  1. **It deleted documentation.** Docstrings were stripped from `src/ui/state.py` purely to fit, including the explanation of why the approve row is absent in search mode. A cap whose effect is *less* explanation is working against its own rationale.
+  2. **It fought the formatter.** `commands/config_apply.py` was hand-squeezed to 88 lines; `black` reformatted its imports and pushed it back to 97. Hand-tuning line counts against an auto-formatter is a losing, pointless game.
+  3. **It mismeasured four files.** `core/diffing.py` (99 total / 72 code), `commands/check_cmd.py` (96/75), `notify/hook.py` (95/75), and `commands/add_remove_cmd.py` (103/81) were flagged as violations purely for being well-commented. They are not complex files, and splitting them would have been busywork that made the codebase worse.
+- **Rationale**: "Lines of code" is also what Principle VI said all along; the original decision was stricter than the text it was interpreting. Docstrings are counted because they genuinely occupy a reader's attention budget, which is what the cap is protecting; blank lines and comments are not, because penalising them discourages exactly the things that make a file readable.
+- **Effect**: the deferred-violations list drops from 8 files to 4 (`installers/script.py` 169, `commands/update_cmd.py` 125, `installers/settings_patch.py` 121, `core/state_model.py` 114). Those four are genuinely oversized by any measure.
+- **Alternatives considered**: raising the cap to ~120 total lines — would have relieved the pressure but kept the wrong incentive, since a file could still be forced to shed comments to fit; excluding docstrings entirely — rejected, since a 400-line docstring is a real readability problem and the cap should notice it.
 
 ## 1c. Scope of `claude-kit list` (FR-026)
 

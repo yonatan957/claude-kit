@@ -51,7 +51,7 @@ claude-kit is a local, frozen-binary CLI/TUI tool (distributed via npm) that let
 
 ### Principle VI Remediation
 
-**Measurement definition** (previously unspecified — resolved in research.md §10): the cap counts **total physical lines per file**, including blanks, comments, and docstrings. This is the strictest reading, needs no parser, and removes all ambiguity about what "90 lines of code" means. It is enforced by a new contract test, `tests/contract/test_file_line_limit.py`, which walks `src/**/*.py` and fails with a per-file report — making the gate mechanical from here on instead of a review-time judgment call.
+**Measurement definition** (resolved in research.md §1d; constitution v1.2.0): the cap counts **lines of code** — physical lines that are neither blank nor comment-only. Docstrings count; blanks and `#` comments do not. An earlier revision counted total physical lines and was abandoned after it deleted docstrings to fit and mismeasured four well-commented files. It is enforced by a new contract test, `tests/contract/test_file_line_limit.py`, which walks `src/**/*.py` and fails with a per-file report — making the gate mechanical from here on instead of a review-time judgment call.
 
 Current state, measured:
 
@@ -208,15 +208,13 @@ Three details this pins down, each traceable to a requirement:
 
 Principle VI is currently violated by eight files that this phase does not otherwise touch. They are recorded here rather than fixed opportunistically, because splitting a file the phase has no other reason to open risks regressions with no offsetting benefit and would make this change's diff unreviewable. Each carries a proposed split so the follow-up is mechanical:
 
-| File | Lines | Proposed split | Justification for deferring |
+| File | Lines of code | Proposed split | Justification for deferring |
 |---|---:|---|---|
-| `installers/script.py` | 214 | `script.py` (orchestration) + `script_steps.py` (install/config/verify runners) + `script_env.py` (env assembly) | Highest-risk file in the repo (drives real subprocesses against the user's machine); must be split under its own test coverage, not alongside a UI rewrite |
-| `core/state_model.py` | 159 | `models_registry.py` + `models_installed.py` + `models_state.py`, re-exported from `state_model.py` | Imported by nearly every module; a split touches every import site and would swamp this diff |
-| `commands/update_cmd.py` | 148 | `update_cmd.py` (flow) + `update_reverify.py` (FR-044 re-verification) | Independent of the TUI and of `list`; no reason to couple it to this change |
-| `installers/settings_patch.py` | 144 | `settings_patch.py` (span editor) + `json_span.py` (tokenizer/offset finder) | Carries the byte-for-byte guarantee (FR-038/SC-007); split deserves its own focused review |
-| `commands/add_remove_cmd.py` | 105 | Extract shared apply-logic into `commands/config_apply.py` (created this phase) | Becomes a much smaller change *after* `config_apply.py` exists; sequencing it second is cheaper |
-| `core/diffing.py` | 99 | `diffing.py` + `plan_items.py` (`PlanItem`/`DiffPlan` dataclasses) | 9 lines over; trivial but touches a widely-imported type |
-| `commands/check_cmd.py` | 96 | Extract remote-version probing into `core/version_check.py` | 6 lines over; also improves Principle I purity by moving pure comparison into `core/` |
-| `notify/hook.py` | 95 | Move the notice-formatting helper into the existing `core/notice.py` | 5 lines over; must preserve Principle V's minimal import graph, so needs care |
+| `installers/script.py` | 169 | `script.py` (orchestration) + `script_steps.py` (install/config/verify runners) + `script_env.py` (env assembly) | Highest-risk file in the repo (drives real subprocesses against the user's machine); must be split under its own test coverage, not alongside a UI rewrite |
+| `commands/update_cmd.py` | 125 | `update_cmd.py` (flow) + `update_reverify.py` (FR-044 re-verification) | Independent of the TUI and of `list`; no reason to couple it to this change |
+| `installers/settings_patch.py` | 121 | `settings_patch.py` (span editor) + `json_span.py` (tokenizer/offset finder) | Carries the byte-for-byte guarantee (FR-038/SC-007); split deserves its own focused review |
+| `core/state_model.py` | 114 | `models_registry.py` + `models_installed.py` + `models_state.py`, re-exported from `state_model.py` | Imported by nearly every module; a split touches every import site and would swamp this diff |
+
+Four files previously on this list — `commands/add_remove_cmd.py`, `core/diffing.py`, `commands/check_cmd.py`, and `notify/hook.py` — are **no longer violations** under the corrected metric. They were flagged only for being well-commented; splitting them would have been busywork.
 
 **Recommended sequencing**: land this phase's TUI/`list` work first, then the eight splits above as one focused follow-up, introducing `tests/contract/test_file_line_limit.py` in the same follow-up so the gate turns green and stays green. Until that test lands, Principle VI remains review-enforced and will drift again.

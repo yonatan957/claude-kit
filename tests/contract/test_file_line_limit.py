@@ -1,14 +1,14 @@
-"""Contract test: Constitution Principle VI — no Python file over 90 lines.
+"""Contract test: Constitution Principle VI — no Python file over 90 lines of code.
 
-Measurement is **total physical lines** (blanks, comments, and docstrings all
-count), per research.md 1b: it is the strictest reading, needs no parser, and
-cannot be gamed by reformatting.
+Measurement is **lines of code**: physical lines that are neither blank nor
+comment-only. Docstrings count; blanks and `#` comments do not (constitution
+v1.2.0, which supersedes the earlier total-physical-lines rule — that metric
+penalised documentation rather than complexity, and was abandoned after it
+caused docstrings to be deleted just to fit).
 
-`DEFERRED_OVER_LIMIT` holds the files that already exceeded the cap when the
-principle was ratified (constitution v1.1.0, 2026-08-03). They are tracked in
-plan.md's Complexity Tracking table and split by tasks T099-T101 (Phase 14);
-remove each entry as its split lands, then delete the allowlist entirely.
-Nothing may ever be *added* to this list.
+`DEFERRED_OVER_LIMIT` holds files that predate mechanical enforcement and are
+tracked in plan.md's Complexity Tracking table. Remove each entry as its split
+lands, then delete the allowlist entirely. Nothing may ever be *added* to it.
 """
 
 from __future__ import annotations
@@ -25,17 +25,17 @@ DEFERRED_OVER_LIMIT: frozenset[str] = frozenset(
         "core/state_model.py",
         "commands/update_cmd.py",
         "installers/settings_patch.py",
-        "commands/add_remove_cmd.py",
-        "core/diffing.py",
-        "commands/check_cmd.py",
-        "notify/hook.py",
     }
 )
 
 
 def line_count(path: Path) -> int:
-    """Total physical lines, counted the same way `wc -l`-style tools do."""
-    return len(path.read_text(encoding="utf-8").splitlines())
+    """Lines of code: non-blank, non-comment-only physical lines."""
+    return sum(
+        1
+        for raw in path.read_text(encoding="utf-8").splitlines()
+        if (line := raw.strip()) and not line.startswith("#")
+    )
 
 
 def _relative(path: Path) -> str:
