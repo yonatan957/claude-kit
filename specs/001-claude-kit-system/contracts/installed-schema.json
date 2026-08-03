@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "claude-kit installed.json (Installed Record)",
+  "type": "object",
+  "required": ["state_version", "last_updated", "catalog_commit", "registry_version", "cli_version"],
+  "properties": {
+    "state_version": { "type": "string" },
+    "last_updated": { "type": "string", "format": "date-time" },
+    "catalog_commit": { "type": "string" },
+    "registry_version": { "type": "string" },
+    "cli_version": { "type": "string" },
+    "skills": { "$ref": "#/definitions/contentEntryMap" },
+    "agents": { "$ref": "#/definitions/contentEntryMap" },
+    "plugins": { "$ref": "#/definitions/pluginEntryMap" },
+    "tools": { "$ref": "#/definitions/scriptEntryMap" },
+    "mcps": { "$ref": "#/definitions/scriptEntryMap" }
+  },
+  "definitions": {
+    "contentEntryMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["source", "installed_hash", "installed_at"],
+        "properties": {
+          "source": { "type": "string", "enum": ["claude-kit", "user"] },
+          "installed_hash": { "type": "string" },
+          "installed_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "pluginEntryMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["source", "marketplace", "version", "enabled"],
+        "properties": {
+          "source": { "type": "string", "enum": ["claude-kit", "user"] },
+          "marketplace": { "type": "string" },
+          "version": { "type": "string" },
+          "enabled": { "type": "boolean" }
+        }
+      }
+    },
+    "scriptEntryMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["source", "version", "installed_hash", "config"],
+        "properties": {
+          "source": { "type": "string", "enum": ["claude-kit", "user"] },
+          "version": { "type": "string" },
+          "installed_hash": { "type": "string" },
+          "config": {
+            "type": "object",
+            "required": ["status"],
+            "properties": {
+              "status": { "type": "string", "enum": ["pending", "done", "failed"] },
+              "verified_at": { "type": ["string", "null"], "format": "date-time" },
+              "answers": {
+                "type": "object",
+                "additionalProperties": { "type": "string", "const": "<set>" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

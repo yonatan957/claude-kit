@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0",
+  "version": "1.0.0",
+  "min_cli_version": "0.1.0",
+  "types": [
+    { "name": "skills", "handler": "content" },
+    { "name": "agents", "handler": "content" },
+    { "name": "plugins", "handler": "marketplace" },
+    { "name": "tools", "handler": "script" },
+    { "name": "mcps", "handler": "script" }
+  ],
+  "plugin_marketplace": {
+    "add": "claude plugin marketplace add {marketplace}",
+    "install": "claude plugin install {name}@{marketplace}",
+    "update": "claude plugin update {name}@{marketplace}",
+    "remove": "claude plugin uninstall {name}@{marketplace}"
+  },
+  "skills": {
+    "fixture-skill": {
+      "description": "A fixture skill for automated testing",
+      "handler": "content",
+      "version": "1.0.0",
+      "files": [
+        {
+          "path": "skills/fixture-skill/SKILL.md",
+          "hash": "sha256:2690f1d951e660b87c6667ba07aad3f47d2c23cb65e57a5acdb0b87d6f3047c5"
+        }
+      ]
+    }
+  },
+  "agents": {},
+  "plugins": {
+    "fixture-plugin": {
+      "description": "A fixture marketplace plugin for automated testing",
+      "handler": "marketplace",
+      "version": "1.0.0",
+      "marketplace": "claude-kit-fixtures"
+    }
+  },
+  "tools": {
+    "fixture-tool": {
+      "description": "A fixture tool with a non-secret input for automated testing",
+      "handler": "script",
+      "version": "1.0.0",
+      "inputs": [
+        { "name": "api_endpoint", "label": "API Endpoint URL", "secret": false }
+      ]
+    }
+  },
+  "mcps": {
+    "fixture-mcp": {
+      "description": "A fixture MCP server with a secret input for automated testing",
+      "handler": "script",
+      "version": "1.0.0",
+      "inputs": [
+        { "name": "api_key", "label": "API Key", "secret": true }
+      ],
+      "mcp_config": {
+        "command": "node",
+        "args": ["fixture-mcp/server.js"],
+        "env": { "API_KEY": "${API_KEY}" }
+      }
+    }
+  }
+}
