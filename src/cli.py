@@ -47,8 +47,9 @@ def add(
     name: str = typer.Argument(..., help="Exact component name."),
 ) -> None:
     """Non-interactively install a single named component."""
-    typer.echo("add: not yet implemented")
-    raise typer.Exit(code=1)
+    from src.commands.add_remove_cmd import run_add
+
+    run_add(category=type, name=name)
 
 
 @app.command()
@@ -57,8 +58,9 @@ def remove(
     name: str = typer.Argument(..., help="Exact component name."),
 ) -> None:
     """Non-interactively remove a single named, installed component."""
-    typer.echo("remove: not yet implemented")
-    raise typer.Exit(code=1)
+    from src.commands.add_remove_cmd import run_remove
+
+    run_remove(category=type, name=name)
 
 
 @app.command(name="list")

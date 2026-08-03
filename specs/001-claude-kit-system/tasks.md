@@ -111,7 +111,7 @@ npm/
 
 - [X] T038 [US2] Implement `claude-kit add <type> <name>` (non-interactive install via the type's installer, then Step 2 configure if `inputs[]` is declared, clear non-zero-exit errors on unknown type/name/handler failure; refuse to silently overwrite a `"user"`-sourced naming collision — print the same distinct-confirmation prompt used by T033 rather than proceeding silently) in `src/commands/add_remove_cmd.py` per FR-017/FR-019/FR-020/FR-043 (depends on T007, T009, T023, T024, T027, T031, T033)
 - [X] T039 [US2] Implement `claude-kit remove <type> <name>` (non-interactive removal via the type's installer, idempotent no-op if already removed, clear non-zero-exit errors on handler failure) in `src/commands/add_remove_cmd.py` per FR-018/FR-020/FR-037 (depends on T023, T024, T028)
-- [ ] T040 [US2] Wire `add` and `remove` into `src/cli.py` (depends on T010, T038, T039)
+- [X] T040 [US2] Wire `add` and `remove` into `src/cli.py` (depends on T010, T038, T039)
 
 **Checkpoint**: User Stories 1 AND 2 both work independently
 
