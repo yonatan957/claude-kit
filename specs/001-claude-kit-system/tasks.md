@@ -167,7 +167,7 @@ npm/
 
 ### Tests for User Story 5
 
-- [ ] T051 [P] [US5] Unit test: `src/core/notice.py`'s pure findings→message rendering, including producing a null message when nothing is new beyond `announced`, in `tests/unit/test_notice.py`
+- [X] T051 [P] [US5] Unit test: `src/core/notice.py`'s pure findings→message rendering, including producing a null message when nothing is new beyond `announced`, in `tests/unit/test_notice.py`
 - [ ] T052 [P] [US5] Integration test: `claude-kit check` writes `state.json` with a non-null `message` and matching `findings`, exits `0`, and produces no interactive stdout in `tests/integration/test_check.py`
 - [ ] T053 [P] [US5] Integration test: the notify hook prints the stored `message` verbatim with zero network/git/subprocess calls on that path in `tests/integration/test_notify_hook.py`
 - [ ] T054 [P] [US5] Integration test: a finding already recorded in `announced` is not shown again on a later hook read; a genuinely new finding after another `check` run is still shown in `tests/integration/test_notify_dedup.py`
