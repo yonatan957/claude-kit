@@ -15,6 +15,7 @@ import typer
 
 from src.commands.config_cmd import (
     NamingCollisionRefused,
+    NoTTYError,
     _apply_add,
     _apply_remove,
     _default_confirm_collision,
@@ -52,7 +53,7 @@ def run_add(category: str, name: str) -> None:
 
         item = PlanItem(category=category, name=name, component=component)
         _apply_add(item, registry, installed, _default_confirm_collision)
-    except (CatalogSyncError, RegistryError, AddRemoveError, NamingCollisionRefused) as exc:
+    except (CatalogSyncError, RegistryError, AddRemoveError, NamingCollisionRefused, NoTTYError) as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=1) from exc
     except Exception as exc:  # noqa: BLE001 - any installer failure, surfaced per FR-020

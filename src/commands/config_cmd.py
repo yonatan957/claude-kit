@@ -46,6 +46,16 @@ class NamingCollisionRefused(Exception):
     """Raised when a naming collision (FR-043) is not explicitly confirmed."""
 
 
+class NoTTYError(Exception):
+    """Raised when Step 2 configure prompts are needed but no TTY is
+    available — without this, launching the real Textual ConfigureApp
+    against a non-interactive stdin (e.g. CI, a piped subprocess) hangs
+    rather than failing cleanly, discovered via T064's real-subprocess
+    quickstart walkthrough (cli-commands.md's cross-command guarantee that
+    `add` may read stdin only when collecting declared inputs — it must
+    still refuse cleanly, not hang, when no TTY backs that stdin)."""
+
+
 def _has_naming_collision(category: str, name: str, component: Component, installed: InstalledRecord) -> bool:
     """True if `name` already exists outside claude-kit's own tracking — a
     manually-placed ("user"-sourced) item — per FR-043. Never true for a name
@@ -112,6 +122,11 @@ def _sync_and_load_registry(installed: InstalledRecord) -> Registry:
 
 def _collect_answers(name: str, component: Component) -> dict[str, str]:
     """Launches Step 2 (FR-014/FR-015) for one component's declared inputs."""
+    if not sys.stdin.isatty() or not sys.stdout.isatty():
+        raise NoTTYError(
+            f"{name} requires interactive input but no TTY is available; "
+            "run this in an interactive terminal, or pre-configure it via `claude-kit config`"
+        )
     answers = ConfigureApp(name, component.inputs).run()
     return answers or {}
 
