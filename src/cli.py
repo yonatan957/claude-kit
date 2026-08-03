@@ -75,8 +75,9 @@ def list_cmd() -> None:
 @app.command()
 def check() -> None:
     """Background check: refresh state.json for the next session-start notice."""
-    typer.echo("check: not yet implemented")
-    raise typer.Exit(code=1)
+    from src.commands.check_cmd import run_check
+
+    run_check()
 
 
 def main() -> None:

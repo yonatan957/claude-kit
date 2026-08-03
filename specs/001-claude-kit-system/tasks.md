@@ -178,7 +178,7 @@ npm/
 - [X] T056 [US5] Implement `claude-kit check` (compare local vs. remote catalog commit and local vs. latest CLI version, count `"pending"` configs, render+write `message`/`findings`/`announced` to `state.json`, non-zero exit only if the write itself fails) in `src/commands/check_cmd.py` per FR-028–FR-032 (depends on T007, T009, T055)
 - [X] T057 [P] [US5] Implement the minimal notify hook — a fast, local-only read of `state.json` that prints `message` verbatim if present, with **zero imports from `core/`, `installers/`, or anything network/git-touching** (per Principle V, do not import `src/core/state_model.py` or `src/core/paths.py`; inline the `state.json` path and a minimal JSON read instead) — in `src/notify/hook.py` per FR-030/FR-031/Principle V
 - [X] T058 [US5] Implement the detached launch of `claude-kit check` from the notify hook (`subprocess.Popen` with `start_new_session=True` on POSIX, `CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS` on Windows, never awaited) in `src/notify/hook.py` per research.md #6 (depends on T057)
-- [ ] T059 [US5] Wire `check` into `src/cli.py` (depends on T010, T056)
+- [X] T059 [US5] Wire `check` into `src/cli.py` (depends on T010, T056)
 
 **Checkpoint**: All five user stories are independently functional
 
