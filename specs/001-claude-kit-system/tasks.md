@@ -73,7 +73,7 @@ npm/
 - [ ] T019 [P] [US1] Integration test: `claude_settings.json` is byte-for-byte identical outside the `mcpServers` key before vs. after an MCP install in `tests/integration/test_settings_preservation.py`
 - [ ] T020 [P] [US1] Integration test: selecting a component name that collides with an existing `"user"`-sourced (manually placed) entry is refused without explicit, distinct confirmation in `tests/integration/test_naming_collision.py`
 - [X] T021 [P] [US1] Unit test: `src/installers/settings_patch.py`'s surgical `mcpServers` editor preserves every untouched byte/key of a fixture settings file in `tests/unit/test_settings_patch.py`
-- [ ] T022 [P] [US1] Unit test: `src/installers/content.py` and `src/installers/script.py` produce no duplicate entries/files/registrations when install or remove is run twice consecutively in `tests/unit/test_installers_idempotency.py`
+- [X] T022 [P] [US1] Unit test: `src/installers/content.py` and `src/installers/script.py` produce no duplicate entries/files/registrations when install or remove is run twice consecutively in `tests/unit/test_installers_idempotency.py`
 
 ### Implementation for User Story 1
 
