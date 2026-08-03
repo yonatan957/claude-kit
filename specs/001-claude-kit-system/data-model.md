@@ -24,7 +24,7 @@ Read-only from claude-kit's perspective; owned by the remote Catalog Repo.
 | `files[]` | array of `{ path, hash }` | Present for `content`-handler components; drives both install (copy) and drift detection (compare against `installed_hash`). |
 | `inputs[]` | array of `{ name, label, secret: bool }` | Declares what Step 2 configuration must collect; `secret: true` triggers masked entry (FR-015) and restricted storage (FR-016). |
 | `mcp_config` | object \| null | Present only for `mcps`; the exact block to merge into `claude_settings.json`'s `mcpServers[name]`. |
-| `version` | string | Component-level content version, used for the "up to date vs. outdated" comparison surfaced by `list` (FR-026). |
+| `version` | string | Component-level content version, used for the "up to date vs. outdated" comparison surfaced by `list` (FR-026) — looked up *from* the catalog for each installed entry, since `list` now iterates `installed.json` rather than the catalog. |
 
 **Validation rules**: every component's `handler` must be one of the three known handlers; every `content` component must declare at least one file; every `script`/`mcps` component's declared `inputs[]` names must be unique within that component (edge case from spec: two components may reuse an input name across *different* components — answers are still kept separate because they're stored per-component, per Installed Record below, never in a single flat namespace).
 
@@ -77,11 +77,37 @@ Written only by `claude-kit check`; read only (never written) by the session-sta
 
 Not a JSON-engine field itself — a **Credential** is a secret input value, keyed by `(component-name, input-name)`, persisted as one file per component under `~/.claude-kit/env.d/` (e.g., `env.d/<component-name>.env`), written once by the script handler's config step and never re-read by anything except that same component's own config/verify scripts. Its only representation inside any of the three JSON engines is the masked `"<set>"` placeholder in `installed.json`.
 
+## Cross-cutting: Picker Interaction State (in-memory only)
+
+Transient, never persisted — it exists only for the lifetime of one `claude-kit config` run, and is the model the inline TUI renders. Defined in `ui/state.py` with no `prompt_toolkit` imports, so it is unit-testable without a terminal.
+
+**`PickerEntry`** (`ui/entry.py`) — one per catalog component in scope:
+
+| Field | Type | Notes |
+|---|---|---|
+| `category`, `name`, `component` | — | Identity plus the catalog record being offered. |
+| `currently_installed` | bool | Seeded from `installed.json` at launch; never mutated. |
+| `selected` | bool | Seeded equal to `currently_installed`; toggled by `Enter`. |
+| `pinned` | bool | Set when selected while in search mode; floats the entry to the top on return to browsing (FR-010). |
+| `naming_collision` | bool | A manually-placed item shares this name (FR-043) — rendered as a warning prefix. |
+
+**Derived selection state** (`SelectionState`, the only input to the checkbox glyph — FR-047):
+
+| State | Condition | Glyph |
+|---|---|---|
+| `PENDING_REMOVAL` | `currently_installed and not selected` | `[X]` red |
+| `SELECTED` | `selected` | `[✓]` green |
+| `UNSELECTED` | otherwise | `[ ]` default |
+
+**`PickerState`** — `entries: list[PickerEntry]`, `mode: BROWSE | SEARCH`, `query: str`, `cursor: int`. The visible row list is derived, never stored: in `BROWSE` it is pinned entries, then the rest, then a single sentinel **approve row**; in `SEARCH` it is entries matching `query`, with no approve row. `cursor` indexes that derived list and is clamped on every mode change or re-filter. `activate()` (bound to `Enter`) returns `TOGGLED` or `APPROVED` depending on whether the cursor rests on the sentinel row — the only path to approval (FR-012).
+
 ## Relationships
 
 ```text
 Catalog.types[].handler  ──determines──▶  which installers/*.py module runs
 Catalog.<category>.<name>  ──diffed against──▶  Installed Record.<category>.<name>  ──produces──▶  add/remove/update plan
+Installed Record.<category>.<name>  ──iterated by──▶  list_cmd.build_rows()  ──enriched from──▶  Catalog.<category>.<name>  (absent ⇒ freshness "unknown")
+Catalog + Installed Record  ──seed──▶  PickerState.entries  ──Enter/Tab──▶  desired selection  ──diffed──▶  add/remove plan
 Installed Record.tools/mcps.<name>.config.answers  ──masks──▶  Credential file contents (env.d/<name>.env)
 Notification Snapshot.findings  ──rendered into──▶  Notification Snapshot.message  ──printed verbatim by──▶  notify/hook.py
 ```

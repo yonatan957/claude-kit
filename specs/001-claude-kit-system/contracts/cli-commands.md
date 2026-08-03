@@ -14,6 +14,20 @@ This is the externally observable contract for every claude-kit command: invocat
 - **Args**: optional `type` (one of the declared categories) to pre-filter Step 1's list.
 - **Behavior**: Step 1 (picker) → on approval, apply all adds/removes in one pass → Step 2 (sequential configure prompts) for any newly selected component with declared `inputs[]`.
 - **Interactivity**: requires a TTY; MUST refuse with a clear error (not a hang or a crash) if run without one.
+- **Presentation** (FR-045/FR-046): renders **inline** in the terminal's normal buffer. MUST NOT enter the alternate screen buffer, MUST NOT clear the screen or scrollback, and MUST leave its final frame in scrollback on exit. On-screen chrome is limited to the per-category counts line, the bounded list viewport, and a one-line key hint.
+- **Key bindings** (FR-007/FR-009/FR-012) — this set is exhaustive; no other key may be bound:
+
+  | Key | Behavior |
+  |---|---|
+  | `↑` / `↓` | Move the highlight within the visible rows (clamped, no wraparound) |
+  | `Enter` | On an entry row: toggle its selection. On the trailing **"Approve & Install"** row: commit the plan and exit |
+  | `Tab` | Toggle search mode on/off — the only way in and the only way out |
+  | printable / `Backspace` | In search mode only: edit the query |
+  | `Esc` | In search mode: return to browsing. In browse mode: cancel with zero changes |
+  | `Ctrl-C` | Cancel with zero changes |
+
+  Explicitly forbidden: any single-letter approval shortcut (the legacy `a`), `Space` as a selection toggle, and any separate "exit search" row, button, or control.
+- **Selection markers** (FR-047): `[ ]` unselected, `[✓]` selected (green), `[X]` pending removal (red). A row's marker depends only on its selection state, never on whether it is highlighted, and MUST remain visible across focus/mode transitions.
 - **Exit codes**: `0` on completion (including a clean cancel with zero changes applied); non-zero if any part of the approved install/remove plan fails to apply.
 
 ## `claude-kit update`
@@ -38,8 +52,10 @@ This is the externally observable contract for every claude-kit command: invocat
 ## `claude-kit list`
 
 - **Args**: none
-- **Behavior**: read-only; renders every catalog component with category, installed/not, up-to-date/outdated, configuration status (done/pending/failed/n/a), active/inactive.
-- **Exit codes**: `0` always, unless the local catalog cache is entirely missing/corrupt (non-zero, with instructions to run `update`).
+- **Behavior** (FR-026, revised): read-only; renders **only the components recorded in `installed.json`** — never catalog components that are not installed. Columns: category, name, version, up-to-date/outdated/unknown, configuration status (done/pending/failed/n/a), active/inactive. Pending configuration MUST be visually distinct from done (FR-027).
+- **Orphaned entries**: a component present in `installed.json` but absent from the current catalog MUST still be listed, with freshness reported as `unknown` rather than being hidden.
+- **Empty state**: with zero installed components, prints a single explanatory line naming `claude-kit config` as the way to add some, and exits `0`.
+- **Exit codes**: `0` always, unless the local catalog cache is entirely missing/corrupt (non-zero, with instructions to run `update`) — the cache is required because freshness cannot be computed without it.
 
 ## `claude-kit check`
 

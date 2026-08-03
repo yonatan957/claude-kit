@@ -4,7 +4,9 @@
 
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/, quickstart.md
 
-**Tests**: Included. plan.md's Testing section and the constitution's idempotency-review gate commit this project to pytest contract/unit/integration tests and a Textual `Pilot` harness, so test tasks are generated alongside implementation for every phase.
+**Tests**: Included. plan.md's Testing section and the constitution's idempotency-review gate commit this project to pytest contract/unit/integration tests, so test tasks are generated alongside implementation for every phase. **As of the Phase 2 refinement the Textual `Pilot` harness is replaced by (a) direct unit tests against the framework-free `PickerState` and (b) `prompt_toolkit`'s `create_pipe_input()`/`DummyOutput()` for end-to-end key handling.**
+
+**Status**: Phases 1–8 (T001–T064) are complete — that is the original build. **Phases 9–14 (T065–T101) are the Phase 2 refinement** described in plan.md's "Revision" note: the inline `prompt_toolkit` TUI, the `Tab`/`Enter` interaction model, installed-only `list`, and Principle VI compliance. Existing task IDs and their completion state are preserved as the historical record and MUST NOT be renumbered.
 
 **Organization**: Tasks are grouped by user story (from spec.md, priorities P1–P5) to enable independent implementation and testing of each story.
 
@@ -196,6 +198,113 @@ npm/
 
 ---
 
+# Phase 2 Refinement (T065–T101)
+
+Everything below implements plan.md's Phase 2 revision. Read plan.md's "TUI Architecture (Phase 2)", "`list` Refinement (FR-026)", and "Principle VI Remediation" sections before starting.
+
+**Hard rule for every task below**: no Python file in `src/` may exceed **90 total physical lines** (blanks, comments, and docstrings all count — research.md §1b). Verify with:
+
+```bash
+python -c "import pathlib;[print(len(p.read_text(encoding='utf-8').splitlines()),p) for p in pathlib.Path('src').rglob('*.py') if len(p.read_text(encoding='utf-8').splitlines())>90]"
+```
+
+---
+
+## Phase 9: Phase 2 Setup (Dependency Swap & Guardrail)
+
+**Purpose**: Put the new UI library and the line-limit guardrail in place before any code moves
+
+- [ ] T065 Add `prompt_toolkit>=3.0` to `[project.dependencies]` and remove `textual>=0.58` in `pyproject.toml` (Textual becomes unused after T080; removing it also shrinks the PyInstaller bundle per plan.md Technical Context)
+- [ ] T066 Write the Principle VI guardrail in `tests/contract/test_file_line_limit.py`: walk `src/**/*.py`, fail any file over 90 total physical lines, and report every offender with its count in one assertion message. Seed it with an explicit `DEFERRED_OVER_LIMIT` allowlist containing exactly the 8 files from plan.md's Complexity Tracking table (`installers/script.py`, `core/state_model.py`, `commands/update_cmd.py`, `installers/settings_patch.py`, `commands/add_remove_cmd.py`, `core/diffing.py`, `commands/check_cmd.py`, `notify/hook.py`) so the test lands green and guards every new file; add a comment pointing at Phase 14 for allowlist removal
+- [ ] T067 Verify T066 fails correctly by temporarily appending 100 blank lines to a non-allowlisted file (e.g. `src/core/paths.py`), running the test, then reverting — a guardrail that cannot fail is not a guardrail
+
+**Checkpoint**: `pytest tests/contract/test_file_line_limit.py` passes and blocks any new over-limit file
+
+---
+
+## Phase 10: User Story 1 — Dismantle the Monolithic TUI (Priority: P1)
+
+**Goal**: Replace the 245-line full-screen Textual `src/ui/tui.py` with an inline `prompt_toolkit` UI decomposed across `src/ui/`, every file ≤90 lines (FR-045/FR-046/FR-047)
+
+**Independent test**: Launch `claude-kit config` in a real terminal; the picker renders below the shell prompt, prior scrollback is still reachable by scrolling up, no full-screen frame is drawn, and only the counts line / list / one-line key hint are visible
+
+**Build order**: strictly bottom-up along plan.md's layering rule (`tui_app` → `keys`/`render` → `screens` → `widgets` → `entry`), so every task compiles against already-written modules
+
+- [ ] T068 [US1] Create `src/ui/entry.py`: move the `PickerEntry` dataclass out of `tui.py` (fields `category`, `name`, `component`, `currently_installed`, `selected`, `pinned`, `naming_collision`) and add a `SelectionState` enum (`UNSELECTED`/`SELECTED`/`PENDING_REMOVAL`) plus a `selection_state(entry)` helper implementing data-model.md's derived-state table. No `prompt_toolkit` import
+- [ ] T069 [P] [US1] Create `src/ui/style.py`: a `prompt_toolkit` `Style` mapping `class:selected` → green, `class:removal` → red, `class:cursor` → reverse-video, `class:dim` → the key-hint/counts styling. Colors defined once here and nowhere else
+- [ ] T070 [P] [US1] Create `src/ui/widgets/checkbox.py`: `glyph_for(state) -> tuple[str, str]` returning `("[ ]", "")` / `("[✓]", "class:selected")` / `("[X]", "class:removal")`. Assert all three glyphs are equal display width so rows never shift horizontally (FR-047)
+- [ ] T071 [US1] Create `src/ui/widgets/row.py`: render one `PickerEntry` to styled fragments — checkbox glyph (from T070) + `[category] name - description`, prefixed with the FR-043 collision warning when `naming_collision`, and the cursor background applied by position, **never** by mutating the glyph (depends on T068, T070)
+- [ ] T072 [US1] Create `src/ui/widgets/approve_row.py`: render the sentinel "Approve & Install" row with its own styling, visually separated from entry rows and carrying no checkbox glyph (FR-012)
+- [ ] T073 [US1] Create `src/ui/screens/picker.py`: browse-mode view model — order entries pinned-first (FR-010), then append the single sentinel approve row, and compute per-category selection counts honoring `category_filter` (FR-006, depends on T068)
+- [ ] T074 [US1] Create `src/ui/screens/search.py`: search-mode view model — hold the `query` buffer and filter entries by substring match against name and description, with **no** approve row appended (depends on T068)
+- [ ] T075 [US1] Create `src/ui/state.py`: the `PickerState` machine — `entries`, `mode` (`BROWSE`/`SEARCH`), `query`, `cursor`; a derived `visible_rows()` delegating to T073/T074; `move(delta)` clamping without wraparound; `toggle_search()` implementing the `Tab` edge in both directions (clearing `query` on entry, pinning search-selected entries on exit, resetting `cursor` to 0 both ways); `activate()` returning `TOGGLED` or `APPROVED` by cursor position; and `desired_selection()` returning `dict[category, set[name]]`. **Zero `prompt_toolkit` imports** — this file must be testable with no terminal (depends on T073, T074)
+- [ ] T076 [US1] Write pure unit tests for the state machine in `tests/unit/test_picker_state.py`, with no terminal and no `prompt_toolkit`: cursor clamping at both ends; `Tab` round-trip returning to browse with search-selected entries pinned first; `activate()` on an entry returning `TOGGLED` and flipping `selected`; `activate()` on the last row returning `APPROVED`; `selection_state` transitions for a currently-installed entry being deselected (→ `PENDING_REMOVAL`); `desired_selection()` contents after a mixed sequence (depends on T075)
+- [ ] T077 [US1] Create `src/ui/keys.py`: a `KeyBindings` factory binding exactly the contract in `contracts/cli-commands.md` — `up`/`down` → `state.move(±1)`; `enter` → `state.activate()` (exiting the app with the desired selection on `APPROVED`); `tab` → `state.toggle_search()`; printable + `backspace` → edit `query` **in search mode only**; `escape` → leave search, or cancel from browse; `c-c` → cancel. Bind **no** other key — specifically no `a` and no `space` (FR-007/FR-009/FR-012) (depends on T075)
+- [ ] T078 [US1] Create `src/ui/render.py`: build the full viewport `FormattedText` — counts line, bounded list window scrolled to keep `cursor` visible, and the one-line key hint `↑↓ move · Enter select · Tab search · Esc cancel`. Nothing else may be drawn (FR-046) (depends on T071, T072, T073)
+- [ ] T079 [US1] Create `src/ui/tui_app.py`: assemble `Application(full_screen=False, ...)` over a single `Window`/`FormattedTextControl` with a bounded `Dimension`, wire in T077's bindings and T069's style, and expose `run_picker(registry, installed, category_filter, naming_collisions) -> dict[str, set[str]] | None` returning `None` on cancel (FR-008). This is the only file permitted to import `Application` (depends on T077, T078)
+- [ ] T080 [US1] Rewrite Step 2 as `src/ui/configure.py`: sequential per-component prompts via `prompt_toolkit.shortcuts.prompt(..., is_password=input.secret)`, returning collected answers or `None` on cancel, preserving the existing `ConfigureApp` call contract used by `config_cmd`/`add_remove_cmd` (FR-014/FR-015)
+- [ ] T081 [US1] Delete `src/ui/tui.py` and update every import of `PickerApp`/`ConfigureApp` to the new entry points (`src/commands/config_cmd.py:40`, plus any in `src/commands/add_remove_cmd.py`) (depends on T079, T080)
+- [ ] T082 [US1] Rewrite `tests/integration/test_story1_picker.py` against `prompt_toolkit`'s `create_pipe_input()` + `DummyOutput()`, replacing the Textual `Pilot` harness: feed `Enter` to toggle and assert live counts; feed `Tab`/query/`Tab` and assert filtering then pinning; feed `Enter` on a currently-installed entry and assert `PENDING_REMOVAL`; feed `Esc` and assert a `None` return with zero changes. **Delete the old `pilot.press("tab")` focus-shift step at line 66 — `Tab` no longer moves focus** (depends on T079)
+- [ ] T083 [US1] Add regression tests in `tests/integration/test_tui_inline.py` for the requirements most likely to silently regress: assert the rendered output contains no alternate-screen (`?1049h`) or clear-screen (`2J`) sequence (FR-045/SC-010); assert `a` does not approve and `space` does not toggle (FR-007/FR-012); assert the checkbox glyph for a given entry is byte-identical before and after moving the cursor onto and off it (FR-047)
+
+**Checkpoint**: `claude-kit config` runs inline with the new key model; `src/ui/tui.py` is gone; every file under `src/ui/` is ≤90 lines
+
+---
+
+## Phase 11: User Story 1 — In-Scope Complexity Debt (`config_cmd.py`)
+
+**Goal**: Bring `src/commands/config_cmd.py` (282 lines) under the Principle VI cap by extracting the two cohesive units identified in plan.md's Project Structure
+
+- [ ] T084 [US1] Create `src/commands/config_collision.py`: move `_has_naming_collision`, `_record_user_sourced`, and `_default_confirm_collision` out of `config_cmd.py` verbatim (FR-043 logic is unchanged — this is a pure move), along with the `_CONTENT_TARGET_DIRS` map they depend on
+- [ ] T085 [US1] Create `src/commands/config_apply.py`: move `_apply_add`, `_apply_remove`, and `_apply_plan` out of `config_cmd.py`, importing collision helpers from T084 and `ui/configure.py` for the Step 2 prompt callback; keep `NamingCollisionRefused` and `NoTTYError` importable from their original module path to avoid breaking callers (depends on T084)
+- [ ] T086 [US1] Slim `src/commands/config_cmd.py` to orchestration only — load installed → sync/parse registry → detect collisions → `run_picker` → `compute_selection_diff` → `_apply_plan` → save → report — re-exporting the moved names for backward compatibility, and confirm it is ≤90 lines (depends on T085)
+- [ ] T087 [US1] Run the existing suites that cover this code unchanged (`tests/integration/test_story1_configure.py`, `test_naming_collision.py`, `test_add_naming_collision.py`) and confirm they pass with no edits — proving T084–T086 were behavior-preserving moves (depends on T086)
+
+**Checkpoint**: `config_cmd.py`, `config_apply.py`, `config_collision.py` all ≤90 lines with the FR-043 test suite green and unmodified
+
+---
+
+## Phase 12: User Story 4 — Installed-Only `list` (Priority: P4)
+
+**Goal**: `claude-kit list` shows only what is actually installed (FR-026), per plan.md's "`list` Refinement" section and the revised `contracts/cli-commands.md`
+
+**Independent test**: With a catalog containing components that were never installed, run `claude-kit list` and confirm none of them appear, while every installed component does
+
+- [ ] T088 [US4] Invert `build_rows()` in `src/commands/list_cmd.py` to iterate the five category maps of `installed.json` and look up each entry's catalog component for the freshness comparison, emitting nothing for catalog components absent from `installed.json` (FR-026)
+- [ ] T089 [US4] Handle orphaned entries in `src/commands/list_cmd.py`: an installed component with no matching catalog component still emits a row, with `current` set to `None` rendering as `unknown` — it must not raise and must not be skipped
+- [ ] T090 [US4] Update the row formatter and header in `src/commands/list_cmd.py`: drop the now-meaningless `INSTALLED` column and render `CATEGORY · NAME · VERSION · CURRENT · CONFIG · ACTIVE`, keeping pending config visually distinct from done (FR-027)
+- [ ] T091 [US4] Add the empty-state branch to `run_list()` in `src/commands/list_cmd.py`: with zero installed components across all five categories, print `No components installed. Run 'claude-kit config' to add some.` and return exit `0` (spec.md's new edge case)
+- [ ] T092 [US4] Rewrite `tests/integration/test_list.py` for the new contract: assert `fixture-plugin` (in the catalog, never installed) is **absent** from output — replacing the existing assertions at lines 87–88 that require it to be present; assert an installed-but-not-in-catalog component renders with `unknown`; assert the empty state prints the guidance line and exits `0`; update `test_list_rows_reflect_installed_current_config_active` since `build_rows` no longer emits a `fixture-mcp` row when it is not installed (depends on T088–T091)
+- [ ] T093 [US4] Confirm `src/commands/list_cmd.py` is ≤90 lines after the rewrite (plan.md budgets ~60); if over, extract the formatter into `src/commands/list_format.py` (depends on T090)
+
+**Checkpoint**: `claude-kit list` is a projection of `installed.json`; catalog-only components never appear
+
+---
+
+## Phase 13: Phase 2 Polish & Cross-Cutting
+
+- [ ] T094 [P] Update `README.md`'s command-surface section for the new picker key model (`Tab` search toggle, `Enter` select/approve, no `a`, no `Space`) and for `list` now showing only installed components
+- [ ] T095 [P] Re-run quickstart.md's Story 1 walkthrough in a real terminal and confirm each newly added assertion: inline rendering with scrollback intact, marker stability while moving the cursor, `Tab`-only search entry/exit, `a`/`Space` being inert, and approval only via the bottom row (validates FR-045/FR-046/FR-047/SC-010)
+- [ ] T096 [P] Re-run quickstart.md's Story 4 walkthrough and confirm all three `list` cases: installed-only output, the orphaned component rendering `unknown`, and the empty state exiting `0`
+- [ ] T097 Re-run the full suite (`pytest`) plus `ruff check src tests` and `black --check src tests`, and confirm `tests/contract/test_file_line_limit.py` passes with the allowlist unchanged (depends on all prior Phase 2 tasks)
+- [ ] T098 Run the full-system idempotency pass (`tests/integration/test_full_idempotency.py`) to confirm the TUI and `list` changes did not disturb Principle IV (depends on T097)
+
+**Checkpoint**: Phase 2 refinement complete; Principles I–V still green and Principle VI green for every file this phase touched
+
+---
+
+## Phase 14: Deferred — Remaining Principle VI Debt
+
+**Not part of the Phase 2 refinement.** These are the 8 files from plan.md's Complexity Tracking table that exceed the 90-line cap but that Phase 2 has no reason to open. plan.md recommends landing them as one focused follow-up. Each task ends by removing that file from `tests/contract/test_file_line_limit.py`'s `DEFERRED_OVER_LIMIT` allowlist, so the guardrail tightens with every completed split.
+
+- [ ] T099 [P] Split `src/installers/script.py` (214) into `script.py` (lifecycle orchestration) + `script_steps.py` (install/config/verify subprocess runners) + `script_env.py` (env assembly); re-run `tests/unit/test_installers_idempotency.py` and the script-lifecycle contract before removing it from the allowlist
+- [ ] T100 [P] Split `src/core/state_model.py` (159) into `models_registry.py` + `models_installed.py` + `models_state.py`, re-exported from `state_model.py` so no import site changes; then remove from the allowlist
+- [ ] T101 [P] Split the remaining six: `commands/update_cmd.py` (148) → `+ update_reverify.py`; `installers/settings_patch.py` (144) → `+ json_span.py`; `commands/add_remove_cmd.py` (105) → reuse `commands/config_apply.py` from T085; `core/diffing.py` (99) → `+ plan_items.py`; `commands/check_cmd.py` (96) → `+ core/version_check.py`; `notify/hook.py` (95) → fold its formatting helper into `core/notice.py` **while preserving Principle V's minimal import graph**. Remove each from the allowlist as it lands, and delete the allowlist entirely once empty
+
+**Checkpoint**: `DEFERRED_OVER_LIMIT` is empty and deleted; Principle VI is fully mechanical with zero exceptions
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -225,6 +334,49 @@ All five stories depend solely on the Foundational phase, not on each other — 
 - All Foundational tasks marked [P] can run together (T005, T006, T009 first; T007/T008 after T006; T011–T015 anytime after their target module exists)
 - Once Foundational completes, Phases 3–7 (US1–US5) can be staffed and run in parallel — they share only already-built installer/core modules, not in-progress files
 - Within Phase 3, all test tasks (T016–T022) can run in parallel; T023–T026 (four distinct installer files) can run in parallel before T027 depends on T025/T026
+
+---
+
+## Phase 2 Refinement: Dependencies & Execution Order
+
+### Phase Dependencies
+
+- **Phase 9 (Setup)**: Start immediately. T065 (dependency swap) blocks all of Phase 10; T066/T067 (guardrail) block nothing but should land first so every later file is checked as it is written
+- **Phase 10 (Dismantle TUI)**: Depends on T065. Strictly bottom-up — see the build chain below
+- **Phase 11 (`config_cmd` split)**: Depends on Phase 10 completing (T081 rewires the imports that T086 then slims)
+- **Phase 12 (`list` refactor)**: Depends only on Phase 9. **Fully independent of Phases 10–11** — different files, different command, no shared code. Can be staffed in parallel with the entire TUI workstream
+- **Phase 13 (Polish)**: Depends on Phases 10, 11, and 12
+- **Phase 14 (Deferred debt)**: Depends on Phase 13. Explicitly out of scope for this refinement; T101's `add_remove_cmd.py` item also depends on T085
+
+### Phase 10 build chain (strictly sequential where noted)
+
+```text
+T068 (entry.py) ─┬─▶ T071 (row) ─┐
+T069 (style) ────┤               ├─▶ T078 (render) ─┐
+T070 (checkbox) ─┘               │                  ├─▶ T079 (tui_app) ─▶ T081 (delete tui.py) ─▶ T082, T083
+T068 ─▶ T073 (screens/picker) ───┤                  │
+T068 ─▶ T074 (screens/search) ───┴─▶ T075 (state) ──┴─▶ T077 (keys)
+                                     └─▶ T076 (state unit tests)
+T080 (configure.py) ─────────────────────────────────▶ T081
+```
+
+- T069, T070 are `[P]` with each other and with T068
+- T072 (`approve_row`) is `[P]` with T071
+- T076 (pure state tests) can be written the moment T075 lands and runs in parallel with T077/T078
+- T080 (`configure.py`) is independent of the whole picker chain and can be done any time after T065
+
+### Parallel Opportunities
+
+- **Two-track split**: one person on Phases 10→11 (TUI), another on Phase 12 (`list`). They converge at Phase 13
+- Phase 9's T066/T067 can proceed alongside anything
+- Phase 13's T094, T095, T096 are all `[P]`
+- Phase 14's T099, T100, T101 are `[P]` with each other (distinct files)
+
+### Independent test criteria
+
+- **Phase 10**: `claude-kit config` renders inline with scrollback intact; `Tab` is the only search edge; `Enter` toggles and (on the bottom row) approves; `a`/`Space` inert
+- **Phase 11**: the FR-043 collision suite passes **unmodified** — the proof that the split was behavior-preserving
+- **Phase 12**: a catalog component that was never installed never appears in `claude-kit list`
 
 ---
 
