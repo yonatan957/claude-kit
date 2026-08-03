@@ -129,7 +129,7 @@ npm/
 - [X] T042 [P] [US3] Integration test: `update` halts with a non-zero exit and applies no changes when the catalog's `min_cli_version` exceeds the running CLI version in `tests/integration/test_update_version_gate.py`
 - [X] T043 [P] [US3] Integration test: running `update` twice consecutively with an unchanged catalog produces a byte-identical `installed.json` (aside from timestamps) in `tests/integration/test_update_idempotency.py`
 - [X] T044 [P] [US3] Integration test: an update that introduces a new required input marks that component `"pending"` and lists it in the end-of-run summary, without pausing in `tests/integration/test_update_new_input.py`
-- [ ] T045 [P] [US3] Integration test: `update` re-running `verify.sh` for a component whose credential is no longer valid marks it `"pending"` again and reports it, without pausing to collect a new value in `tests/integration/test_update_reverify_failure.py`
+- [X] T045 [P] [US3] Integration test: `update` re-running `verify.sh` for a component whose credential is no longer valid marks it `"pending"` again and reports it, without pausing to collect a new value in `tests/integration/test_update_reverify_failure.py`
 
 ### Implementation for User Story 3
 
