@@ -71,7 +71,7 @@ npm/
 - [X] T017 [P] [US1] Integration test (Textual `Pilot`): picker Step 1 — toggle selections update live per-category counts, search mode filters and pins selections, deselecting an active component flags it as pending removal, cancel applies zero changes in `tests/integration/test_story1_picker.py`
 - [X] T018 [P] [US1] Integration test: Step 2 sequential configure — masked secret entry, `installed.json` shows `config.status = "done"`, `env.d/<name>.env` holds the real secret, `installed.json`'s `answers` field is the literal string `"<set>"` in `tests/integration/test_story1_configure.py`
 - [X] T019 [P] [US1] Integration test: `claude_settings.json` is byte-for-byte identical outside the `mcpServers` key before vs. after an MCP install in `tests/integration/test_settings_preservation.py`
-- [ ] T020 [P] [US1] Integration test: selecting a component name that collides with an existing `"user"`-sourced (manually placed) entry is refused without explicit, distinct confirmation in `tests/integration/test_naming_collision.py`
+- [X] T020 [P] [US1] Integration test: selecting a component name that collides with an existing `"user"`-sourced (manually placed) entry is refused without explicit, distinct confirmation in `tests/integration/test_naming_collision.py`
 - [X] T021 [P] [US1] Unit test: `src/installers/settings_patch.py`'s surgical `mcpServers` editor preserves every untouched byte/key of a fixture settings file in `tests/unit/test_settings_patch.py`
 - [X] T022 [P] [US1] Unit test: `src/installers/content.py` and `src/installers/script.py` produce no duplicate entries/files/registrations when install or remove is run twice consecutively in `tests/unit/test_installers_idempotency.py`
 
