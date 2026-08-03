@@ -5,7 +5,7 @@ description = "Component manager for Claude Code — Skills, Agents, Plugins, To
 requires-python = ">=3.11"
 dependencies = [
     "typer>=0.12",
-    "textual>=0.58",
+    "prompt_toolkit>=3.0",
     "pydantic>=2",
 ]
 
