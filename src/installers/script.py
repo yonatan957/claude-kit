@@ -97,10 +97,16 @@ def install_script_component(
     settings_path: Path,
     env_dir: Path,
     source: str = "claude-kit",
+    is_update: bool = False,
 ) -> ScriptEntry:
     """Run the full install sequence: install.sh -> config.sh (with answers as
     env vars) -> mcp_config merge (mcps only) -> verify.sh. Idempotent:
     re-running with the same inputs upserts, never duplicates, external state.
+
+    `is_update` distinguishes `update`'s re-verify of an already-configured
+    component (FR-044: failure -> "pending", registration left in place,
+    never raises) from a fresh install/add's first verify (FR-042: failure ->
+    "failed", any just-registered mcp_config is rolled back immediately).
     """
     component_dir = _component_dir(catalog_repo_dir, category, name)
 
@@ -143,6 +149,8 @@ def install_script_component(
         result = _run_script(verify_script)
         if result.returncode == 0:
             status, verified_at = "done", datetime.now(UTC)
+        elif is_update:
+            status, verified_at = "pending", None
         else:
             if mcp_registered:
                 _deregister_mcp_server(settings_path, name)
