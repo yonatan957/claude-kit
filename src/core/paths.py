@@ -3,7 +3,27 @@ Claude Code environment. Pure functions only — no I/O (Principle I): callers a
 responsible for creating/reading/writing whatever these paths point to.
 """
 
+import os
 from pathlib import Path
+
+CATALOG_REMOTE_URL_ENV_VAR = "CLAUDE_KIT_CATALOG_URL"
+
+
+class ConfigurationError(Exception):
+    """Raised when required external configuration (e.g. env vars) is missing."""
+
+
+def catalog_remote_url() -> str:
+    """The Catalog Repo's git URL. Not part of any documented data-model
+    engine — the spec assumes "a reachable catalog source" as a prerequisite
+    without specifying how it's configured, so this reads it from an env var."""
+    url = os.environ.get(CATALOG_REMOTE_URL_ENV_VAR)
+    if not url:
+        raise ConfigurationError(
+            f"No Catalog Repo configured: set the {CATALOG_REMOTE_URL_ENV_VAR} "
+            "environment variable to your Catalog Repo's git URL."
+        )
+    return url
 
 
 def home_dir() -> Path:
