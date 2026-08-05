@@ -40,7 +40,25 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Mark each gate PASS / FAIL / N/A with a one-line justification. Any FAIL must either be
+resolved or recorded in Complexity Tracking below.
+
+- [ ] **I. Test-First**: Every behavioral change in this plan has a test named before its
+      implementation task, and command-level changes have an end-to-end test running against
+      a temporary HOME.
+- [ ] **II. Idempotent, Reversible Installation**: Every write this feature performs is safe
+      to repeat, records restore state before touching files it did not create, and is
+      rollback-able. Kit-owned and user-owned files stay distinguishable.
+- [ ] **III. 100-Line File Ceiling**: The planned file layout keeps every Python file at or
+      under 100 non-blank, non-comment lines, split along real responsibility seams.
+- [ ] **IV. No Self-Update Without User Attention**: This feature performs no background or
+      side-effect self-modification of the binary; any version check is skippable and
+      non-blocking.
+- [ ] **V. Consent-Gated Installation I/O**: Third-party installers, package-manager calls,
+      network access, and credential reads/writes are isolated behind an explicit prompt that
+      states what runs and what is stored where. Declining leaves a valid partial state.
+- [ ] **Packaging**: Logic stays in Python; the npm artifact needs no user-side interpreter;
+      behavior is cross-platform (Windows, macOS, Linux) with no POSIX-only assumptions.
 
 ## Project Structure
 
