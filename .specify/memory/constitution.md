@@ -1,29 +1,36 @@
 <!--
 Sync Impact Report
 ==================
-Version change: (unfilled template) → 1.0.0
-Bump rationale: First concrete ratification. All placeholder tokens replaced with
-binding governance; no prior version existed to be incompatible with.
+Version change: 1.0.0 → 1.1.0
+Bump rationale: MINOR. A new principle (VI. Recorded Deviations) was added and the
+Governance section's compliance-review expectations were materially expanded. No existing
+principle was removed or redefined, so prior compliance remains valid.
 
 Modified principles:
-  - [PRINCIPLE_1_NAME] → I. Test-First (NON-NEGOTIABLE)
-  - [PRINCIPLE_2_NAME] → II. Idempotent, Reversible Installation
-  - [PRINCIPLE_3_NAME] → III. 100-Line File Ceiling
-  - [PRINCIPLE_4_NAME] → IV. No Self-Update Without User Attention
-  - [PRINCIPLE_5_NAME] → V. Consent-Gated Installation I/O
+  - I–V: unchanged
+  - (new) → VI. Recorded Deviations
+  - Development Workflow & Quality Gates: the deviation bullet was superseded by Principle
+    VI and rewritten as an operational pointer rather than a duplicate rule.
 
 Added sections:
-  - Distribution & Packaging Constraints (was [SECTION_2_NAME])
-  - Development Workflow & Quality Gates (was [SECTION_3_NAME])
+  - Core Principles → VI. Recorded Deviations
 
 Removed sections: none
 
 Templates requiring updates:
-  ✅ .specify/templates/plan-template.md — Constitution Check gates filled in
-  ✅ .specify/templates/tasks-template.md — tests promoted from OPTIONAL to REQUIRED
+  ✅ .specify/templates/plan-template.md — added the Principle VI gate; Complexity Tracking
+     table now binds one row per unresolved FAIL and requires an explicit "no violations"
+     assertion when empty
+  ✅ .specify/templates/tasks-template.md — reviewed, no new principle-driven task type
   ✅ .specify/templates/spec-template.md — reviewed, no constitution-driven change needed
-  ✅ .claude/skills/speckit-tasks/SKILL.md — "Tests are OPTIONAL" line reconciled with Principle I
+  ✅ .claude/skills/speckit-* — reviewed, no outdated or agent-specific references
   ✅ README.md — reviewed, contains no principle references
+
+Prior report (v1.0.0)
+---------------------
+First concrete ratification from the unfilled template. Placeholders [PRINCIPLE_1_NAME]
+through [PRINCIPLE_5_NAME] became principles I–V; [SECTION_2_NAME] became Distribution &
+Packaging Constraints; [SECTION_3_NAME] became Development Workflow & Quality Gates.
 
 Follow-up TODOs: none
 -->
@@ -103,6 +110,26 @@ command line where another process can read them.
 Rationale: users are consenting to configuration management, not to arbitrary code
 execution or credential handling. Bundling the two makes informed consent impossible.
 
+### VI. Recorded Deviations
+
+Deviations from principles I–V are permitted, but never silently. Every plan MUST carry a
+Constitution Check gate marking each principle PASS, FAIL, or N/A, and every gate not
+resolved to PASS MUST have a corresponding row in that plan's Complexity Tracking table
+stating what is being violated, why it is needed, and which simpler alternative was
+rejected and on what grounds. An empty Complexity Tracking table is an affirmative claim
+that no principle is violated, and is read as such in review.
+
+A deviation that is written down is a reviewable decision. A deviation that is not written
+down is a defect, independent of whether the resulting code works, and independent of
+whether the author believed the deviation was justified. Reviewers MUST reject a plan whose
+gates and Complexity Tracking rows disagree, and MUST NOT accept "the code is fine" as a
+substitute for the missing row.
+
+Rationale: the failure mode this guards against is not a bad decision but an invisible one.
+Principles I–V each have a cost, and a team under deadline will sometimes rightly pay it —
+what cannot be allowed is for that trade to disappear into the diff, where the next person
+inherits a violation with no record of who chose it or what it bought.
+
 ## Distribution & Packaging Constraints
 
 claude-kit is implemented in Python and distributed as a compiled standalone binary
@@ -129,9 +156,9 @@ published to npm. The following constraints are binding:
   test suite that writes outside its temporary sandbox.
 - Every pull request MUST state which principles its changes touch and how compliance was
   verified. "No principle applies" is an acceptable answer when true.
-- Any deviation from a principle MUST be recorded in the plan's Complexity Tracking table
-  with the simpler alternative that was rejected and why. An undocumented deviation is a
-  defect regardless of whether the code works.
+- Deviations are governed by Principle VI: gate the plan, then record each non-PASS gate as
+  a Complexity Tracking row. Review of the plan is where this is caught, not review of the
+  finished code.
 
 ## Governance
 
@@ -153,6 +180,8 @@ Versioning policy for this document:
 Compliance review: the Constitution Check gate in every plan is the routine enforcement
 point. Principles I, II, and III are additionally machine-checked in CI. Principles IV and
 V are reviewed by a human on every pull request that touches update logic, installer
-invocation, or credential handling.
+invocation, or credential handling. Principle VI is reviewed on every plan without
+exception: a plan missing its Constitution Check gate, or carrying a non-PASS gate with no
+matching Complexity Tracking row, MUST be sent back before implementation begins.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-05 | **Last Amended**: 2026-08-05
+**Version**: 1.1.0 | **Ratified**: 2026-08-05 | **Last Amended**: 2026-08-05

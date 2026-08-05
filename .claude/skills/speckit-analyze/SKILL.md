@@ -142,6 +142,10 @@ Focus on high-signal findings. Limit to 50 findings total; aggregate remainder i
 
 - Any requirement or plan element conflicting with a MUST principle
 - Missing mandated sections or quality gates from constitution
+- Unrecorded deviations: a plan whose Constitution Check section is absent, has unmarked
+  gates, or carries a non-PASS gate with no matching Complexity Tracking row. A plan element
+  that violates a principle while every gate reads PASS is a CRITICAL finding — the gate is
+  wrong, not merely incomplete.
 
 #### E. Coverage Gaps
 

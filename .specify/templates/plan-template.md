@@ -40,8 +40,9 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Mark each gate PASS / FAIL / N/A with a one-line justification. Any FAIL must either be
-resolved or recorded in Complexity Tracking below.
+Mark each gate PASS / FAIL / N/A with a one-line justification. This section is mandatory —
+a plan without it is incomplete. Any gate not resolved to PASS MUST have a matching row in
+Complexity Tracking below (Principle VI).
 
 - [ ] **I. Test-First**: Every behavioral change in this plan has a test named before its
       implementation task, and command-level changes have an end-to-end test running against
@@ -59,6 +60,8 @@ resolved or recorded in Complexity Tracking below.
       states what runs and what is stored where. Declining leaves a valid partial state.
 - [ ] **Packaging**: Logic stays in Python; the npm artifact needs no user-side interpreter;
       behavior is cross-platform (Windows, macOS, Linux) with no POSIX-only assumptions.
+- [ ] **VI. Recorded Deviations**: Every gate above is marked, and every non-PASS gate has a
+      Complexity Tracking row naming the rejected simpler alternative.
 
 ## Project Structure
 
@@ -123,9 +126,12 @@ directories captured above]
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
+> **One row per Constitution Check gate not marked PASS.** Leaving this table empty is an
+> affirmative claim that no principle is violated — it is read that way in review, so do not
+> empty it to make a plan look clean. A non-PASS gate with no row here sends the plan back
+> before implementation (Principle VI).
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| Violated Principle | Why Needed | Simpler Alternative Rejected Because |
+|--------------------|------------|-------------------------------------|
+| [e.g., III. 100-Line File Ceiling] | [current need] | [why the responsibility does not split cleanly] |
+| [e.g., V. Consent-Gated Installation I/O] | [specific problem] | [why a prompt cannot be shown at this point] |

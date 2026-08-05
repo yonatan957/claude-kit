@@ -64,7 +64,9 @@ You **MUST** consider the user input before proceeding (if not empty).
 3. **Execute plan workflow**: Follow the structure in IMPL_PLAN template to:
    - Fill Technical Context (mark unknowns as "NEEDS CLARIFICATION")
    - Fill Constitution Check section from constitution
-   - Evaluate gates (ERROR if violations unjustified)
+   - Evaluate gates: mark every gate PASS/FAIL/N/A, and write a Complexity Tracking row for
+     each non-PASS gate naming the rejected simpler alternative (Principle VI). ERROR if any
+     non-PASS gate lacks a row, or if the Constitution Check section is omitted entirely.
    - Phase 0: Generate research.md (resolve all NEEDS CLARIFICATION)
    - Phase 1: Generate data-model.md, contracts/, quickstart.md
    - Re-evaluate Constitution Check post-design
