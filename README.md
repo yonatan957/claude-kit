@@ -40,9 +40,12 @@ show all skills/agents/tools/mcp installed locally, including metadata such as: 
 ## the registries
 
 ### main registry 
-will be a repo belongs to us that will sit on the users computer ,containd the skills/mcps/tools etc.
+will be a git repo belongs to us that will sit on the users computer, containd the skills/mcps/tools etc. (not installed yet)
 at ck search <type> --recommend it'll be from the main registry.
 the name of the regisry will be genie so ck install --source genie "skill-name" -> install from genie
+
+## other registries
+for now we don't have more versions, but there be very soon
 
 ## Edge cases
 ### same skill on two sources
