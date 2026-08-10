@@ -45,7 +45,7 @@ at ck search <type> --recommend it'll be from the main registry.
 the name of the regisry will be genie so ck install --source genie "skill-name" -> install from genie
 
 ## other registries
-for now we don't have more versions, but there be very soon
+for now we don't have more versions, but there will be very soon
 
 ## Edge cases
 ### same skill on two sources
