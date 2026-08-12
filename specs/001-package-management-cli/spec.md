@@ -19,6 +19,8 @@ Claude Kit (`ck`) is a command-line tool that gives a single, uniform way to dis
 - Q: Which kinds of add-on count as a package? → A: Five kinds — skill, agent, MCP server, tool, and plugin — all treated identically by every command.
 - Q: Does installation target the user-level `.claude` directory, a project-local one, or both? → A: User-level only; project-local installation is out of scope for this project.
 - Q: When a package name exists in more than one source and no source is named, how is it resolved? → A: First source in the precedence order wins, silently, with `genie` first.
+- Q: When a plugin bundles other packages inside it, do those bundled items appear in `ck list` as installed packages in their own right? → A: No. A plugin is one opaque package — its contents are neither listed separately nor individually removable.
+- Q: Does Claude Kit track a version per installed package, so a person can tell which are out of date? → A: Yes. Each installed package records a version, shown in listings and reported by the status check; upgrading them stays one at a time via install-with-upgrade, not part of the bulk upgrade command.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -71,18 +73,20 @@ A person lists everything Claude Kit has installed locally, of a given kind, and
 
 **Acceptance Scenarios**:
 
-1. **Given** packages installed of a given kind, **When** the person lists that kind, **Then** each installed package is shown with name, description, and identifying tag.
-2. **Given** no packages of a kind are installed, **When** the person lists that kind, **Then** an empty result is reported clearly rather than as an error.
-3. **Given** exactly one installed package with a given name, **When** the person uninstalls by that name, **Then** it is removed and everything it added is reverted.
-4. **Given** two installed packages sharing a name, **When** the person uninstalls by name alone, **Then** the command does not remove anything and asks them to disambiguate, listing the candidates and their tags.
-5. **Given** two installed packages sharing a name, **When** the person uninstalls naming a specific tag, **Then** only that package is removed and the other is untouched.
-6. **Given** a name that is not installed, **When** the person uninstalls it, **Then** they are told it is not installed and nothing changes.
+1. **Given** packages installed of a given kind, **When** the person lists that kind, **Then** each installed package is shown with name, description, installed version, and identifying tag.
+2. **Given** an installed plugin that bundles a skill, **When** the person lists skills, **Then** the bundled skill is not shown as an installed skill, and the plugin remains listed under plugins.
+3. **Given** no packages of a kind are installed, **When** the person lists that kind, **Then** an empty result is reported clearly rather than as an error.
+4. **Given** exactly one installed package with a given name, **When** the person uninstalls by that name, **Then** it is removed and everything it added is reverted.
+5. **Given** two installed packages sharing a name, **When** the person uninstalls by name alone, **Then** the command does not remove anything and asks them to disambiguate, listing the candidates and their tags.
+6. **Given** two installed packages sharing a name, **When** the person uninstalls naming a specific tag, **Then** only that package is removed and the other is untouched.
+7. **Given** a name that is not installed, **When** the person uninstalls it, **Then** they are told it is not installed and nothing changes.
+8. **Given** a package that exists only inside an installed plugin, **When** the person tries to uninstall it directly, **Then** nothing is removed and they are told which plugin provides it.
 
 ---
 
 ### User Story 4 - Know what is out of date, and update deliberately (Priority: P4)
 
-A person checks the versions of everything Claude Kit is responsible for — Claude Kit itself, Claude Code, and the catalog of recommended packages — and sees current versus latest available, recorded to a file that survives between runs. When they decide to act, a separate command performs the upgrades, and they can exclude any of the three parts from that upgrade.
+A person checks the versions of everything Claude Kit is responsible for — Claude Kit itself, Claude Code, the catalog of recommended packages, and every package they have installed — and sees current versus latest available, recorded to a file that survives between runs. When they decide to act, a separate command upgrades the three core components, and they can exclude any of the three from it. Installed packages are reported as behind but are upgraded one at a time by the person, never in bulk.
 
 **Why this priority**: Maintenance value that accrues after the tool is in use. Nothing in the first three stories depends on it.
 
@@ -97,6 +101,8 @@ A person checks the versions of everything Claude Kit is responsible for — Cla
 5. **Given** the person excludes a component from the upgrade, **When** the upgrade runs, **Then** that component is left at its current version and the others are still upgraded.
 6. **Given** any other command is run, **When** it completes, **Then** Claude Kit has not upgraded or replaced itself as a side effect of that command.
 7. **Given** an upgrade fails partway, **When** the person inspects the result, **Then** the affected component is either fully upgraded or fully at its prior version, never in between.
+8. **Given** installed packages that are behind their source's current version, **When** the person checks status, **Then** those packages are listed as behind with their installed and available versions.
+9. **Given** installed packages that are behind, **When** the person runs the upgrade command, **Then** those packages are left untouched and only the core components are upgraded.
 
 ---
 
@@ -105,6 +111,8 @@ A person checks the versions of everything Claude Kit is responsible for — Cla
 - The same package name exists in more than one source: sources are consulted in a fixed precedence order with the main registry first, so a bare install resolves deterministically and reports which source won. Naming a source overrides the order.
 - A package is installed from one source and the same name later appears in another: the installed copy is identified by its tag, so both can coexist locally and be told apart in listings and uninstalls.
 - Two locally installed packages produce the same identifying tag: the person is asked to disambiguate rather than Claude Kit guessing.
+- A plugin bundles a skill the person also installed standalone: both coexist, since the plugin is opaque and its contents are not tracked as separate packages. The standalone copy remains listed and removable on its own; removing it does not disturb the plugin.
+- A person tries to uninstall something that exists only inside a plugin: they are told it is not an independently installed package and pointed at the plugin that provides it.
 - The network is unavailable during search, install, status, or upgrade: the person is told which sources or version checks were unreachable, and no command leaves a half-applied change.
 - The main registry has not been fetched yet when a recommendation search is run: the person is told the catalog is missing and how to obtain it.
 - A person has hand-edited a file that a package also owns: the file is not silently overwritten; the person is told what would be lost and must confirm.
@@ -138,8 +146,11 @@ A person checks the versions of everything Claude Kit is responsible for — Cla
 **Inspection**
 
 - **FR-014**: Users MUST be able to list all locally installed packages of a chosen kind.
-- **FR-015**: System MUST show, for each installed package, its name, description, and a short identifying tag derived from the package's own content.
+- **FR-015**: System MUST show, for each installed package, its name, description, installed version, and a short identifying tag derived from the package's own content.
 - **FR-016**: System MUST distinguish packages it installed from files the person owns.
+- **FR-038**: System MUST record the version of every package at install time, and MUST report that version as unknown — rather than omitting the package — when its source publishes no version.
+- **FR-039**: System MUST report, as part of the status check, which installed packages are behind the version their source now offers.
+- **FR-040**: System MUST NOT upgrade installed packages as part of the bulk upgrade command; upgrading an installed package MUST require installing it explicitly with the upgrade option.
 
 **Removal**
 
@@ -161,7 +172,7 @@ A person checks the versions of everything Claude Kit is responsible for — Cla
 - **FR-026**: System MUST report the installed and latest-available versions of Claude Kit, Claude Code, and the recommended-package catalog.
 - **FR-027**: System MUST write the result of a status check to a file that persists between runs, replacing the previous result rather than appending to it.
 - **FR-028**: System MUST mark a component's latest-available version as unknown, rather than failing, when that information cannot be retrieved.
-- **FR-029**: System MUST upgrade only the components a status check identifies as behind, and MUST report the outcome for each.
+- **FR-029**: System MUST upgrade only the core components — Claude Kit, Claude Code, and the catalog — that a status check identifies as behind, and MUST report the outcome for each.
 - **FR-030**: Users MUST be able to exclude Claude Kit, Claude Code, or the catalog individually from an upgrade.
 - **FR-031**: System MUST NOT upgrade or replace itself except as the direct result of the person invoking the upgrade command in that moment.
 - **FR-032**: System MUST NOT let a version check block, delay past a bounded wait, or cause the failure of any command the person actually asked for.
@@ -171,6 +182,8 @@ A person checks the versions of everything Claude Kit is responsible for — Cla
 
 - **FR-034**: System MUST behave identically on Windows, macOS, and Linux, including how it locates and writes files.
 - **FR-035**: System MUST report failures in terms of what the person can do next, and MUST distinguish "not found", "unreachable", and "refused" from one another.
+- **FR-036**: System MUST offer every command — search, install, list, uninstall — for all five package kinds, with identical behavior and identical command shape across kinds.
+- **FR-037**: System MUST treat a plugin as a single opaque package: anything bundled inside a plugin MUST NOT appear as an installed package of its own kind in a listing, and MUST NOT be individually uninstallable. Uninstalling the plugin removes everything it brought.
 
 ### Key Entities
 
@@ -178,8 +191,8 @@ A person checks the versions of everything Claude Kit is responsible for — Cla
 - **Source**: A place packages come from. Has a name used to select it explicitly and a position in the precedence order used when no source is named.
 - **Main registry ("genie")**: The first-precedence source, held locally as a copy of a repository maintained by the Claude Kit team. Supplies the catalog that recommendation searches draw on. Its contents are not installed merely by being present locally.
 - **Recommended-package catalog**: The list of packages the main registry recommends, retrieved over the network, versioned independently of Claude Kit and Claude Code, and upgradeable on its own.
-- **Installed package record**: The local record of what a given installation placed on disk, sufficient to list it, tell it apart from a same-named sibling, and fully reverse it.
-- **Version status record**: The persisted result of the most recent status check — installed and latest-available versions for Claude Kit, Claude Code, and the catalog.
+- **Installed package record**: The local record of what a given installation placed on disk, sufficient to list it, tell it apart from a same-named sibling, and fully reverse it. Carries the version installed and the source it came from.
+- **Version status record**: The persisted result of the most recent status check — installed and latest-available versions for Claude Kit, Claude Code, and the catalog, plus which installed packages are behind.
 
 ## Success Criteria *(mandatory)*
 
@@ -191,12 +204,14 @@ A person checks the versions of everything Claude Kit is responsible for — Cla
 - **SC-004**: Uninstalling a package returns the environment to a state indistinguishable from before it was installed, in 100% of cases where the person has not hand-edited that package's files.
 - **SC-005**: Running any command twice in succession leaves the environment in the same state as running it once, in 100% of cases.
 - **SC-006**: No command reports success while having applied only part of its changes.
-- **SC-007**: A person can determine which of Claude Kit, Claude Code, and the catalog are out of date in a single command, and their answer survives a restart.
+- **SC-007**: A person can determine which of Claude Kit, Claude Code, the catalog, and their installed packages are out of date in a single command, and their answer survives a restart.
 - **SC-008**: Claude Kit never replaces its own version except during a run the person started for that purpose — verified across every other command.
 - **SC-009**: A person is never surprised by an external program running or a credential being requested: every such step is announced before it happens, in 100% of cases.
 - **SC-010**: A failed command tells the person which of "not found", "unreachable", or "refused" occurred, in 100% of failures.
 - **SC-011**: Search results are returned quickly enough that the person does not perceive a wait when sources are reachable, and an unreachable source never extends the wait beyond a bounded timeout.
 - **SC-012**: Every command behaves the same on Windows, macOS, and Linux, verified on all three.
+- **SC-013**: Every command accepts all five package kinds with the same command shape, verified once per kind.
+- **SC-014**: A person can tell, for any installed package, whether it is current — without reinstalling it to find out.
 
 ## Assumptions
 
@@ -211,6 +226,8 @@ A person checks the versions of everything Claude Kit is responsible for — Cla
 - **Claude Code is installable non-interactively** on all three supported platforms, which initialization depends on.
 - **Network access is available** for initialization, search, status, and upgrade; every command states clearly when it is not, and no command corrupts local state because of it.
 - **Version identifiers for Claude Kit, Claude Code, and the catalog are independently comparable**, so each can be reported and upgraded on its own.
+- **Sources publish a version per package** that can be compared against the recorded installed version. Where a source does not, that package is reported with an unknown version and is never claimed to be behind.
+- **The content tag and the version answer different questions**: the tag distinguishes two same-named installed packages from each other, while the version says whether one of them is out of date. Both are shown in listings.
 
 ## Out of Scope
 
@@ -218,5 +235,7 @@ A person checks the versions of everything Claude Kit is responsible for — Cla
 - Any graphical or web interface; this feature is command-line only.
 - Managing Claude Code settings unrelated to installed packages.
 - Project-local (repository-scoped) installation targets.
+- Bulk upgrading of installed packages. Status reports which are behind; each is upgraded individually by the person.
+- Managing, listing, or removing the individual contents of an installed plugin.
 - Additional registries beyond the main registry, and any source-registration workflow.
 - Dependency resolution between packages, if packages ever declare dependencies on one another.
