@@ -13,8 +13,9 @@ from .types import FlagValue, Payload
 
 __all__ = ["run", "flags", "BINARIES", "TIMEOUT"]
 
-#: Executable names tried in order; ``$SKILLHUB_BIN`` overrides both.
-BINARIES: tuple[str, ...] = ("clawhub", "skillhub")
+#: Executable names tried in order -- add a fallback here if the CLI is ever
+#: published under another name. ``$SKILLHUB_BIN`` overrides the whole list.
+BINARIES: tuple[str, ...] = ("skillhub",)  # note the comma: a 1-tuple, not a str
 
 TIMEOUT = 120.0
 

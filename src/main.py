@@ -2,4 +2,4 @@ from skillhub_library import SkillHubClient
 
 client = SkillHubClient()
 
-client.search()
+print(client.search("goodjob").items)

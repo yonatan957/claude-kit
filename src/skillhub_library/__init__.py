@@ -1,4 +1,4 @@
-"""A thin Python wrapper around the SkillHub CLI (``clawhub`` / ``skillhub``).
+"""A thin Python wrapper around the SkillHub CLI (``skillhub``).
 
     from skillhub_library import SkillHubClient
 
