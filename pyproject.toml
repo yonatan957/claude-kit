@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "skillhub-library"
+version = "0.1.0"
+description = "A small Python wrapper around the SkillHub CLI (skillhub/clawhub)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+dependencies = []
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/skillhub_library"]
