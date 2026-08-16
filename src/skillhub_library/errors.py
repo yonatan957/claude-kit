@@ -6,6 +6,8 @@ catching the lot.
 
 from __future__ import annotations
 
+from .types import JSONObject, Payload
+
 __all__ = ["SkillHubError", "CLINotFoundError", "CLITimeoutError", "CommandError"]
 
 
@@ -24,7 +26,15 @@ class CLITimeoutError(SkillHubError):
 class CommandError(SkillHubError):
     """The CLI exited non-zero or answered ``{"ok": false}``."""
 
-    def __init__(self, command, *, message, returncode=None, details=None, raw=None):
+    def __init__(
+        self,
+        command: str,
+        *,
+        message: str,
+        returncode: int | None = None,
+        details: JSONObject | None = None,
+        raw: Payload = None,
+    ) -> None:
         self.command = command
         self.message = message
         self.returncode = returncode

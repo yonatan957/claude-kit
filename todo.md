@@ -1,0 +1,3 @@
+- return + parameters types typing on every function primitives or set/list primitives or dtos
+- naming
+- logs - ask claude

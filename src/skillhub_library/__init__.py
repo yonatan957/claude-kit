@@ -1,27 +1,39 @@
 """A thin Python wrapper around the SkillHub CLI (``clawhub`` / ``skillhub``).
 
-    from skillhub_library import search, install, uninstall
+    from skillhub_library import SkillHubClient
 
-    for skill in search("pdf", limit=10):
+    client = SkillHubClient()
+
+    for skill in client.search("pdf", limit=10):
         print(skill.slug, skill.latest_version)
 
-    install("pdf-parser", agent="claude-code", scope="user")
-    uninstall("pdf-parser")
+    client.install("pdf-parser", agent="claude-code", scope="user")
+    client.uninstall("pdf-parser")
 
-Every function shells out to the CLI with ``--json``. A failure raises
+Every command shells out to the CLI with ``--json``. A failure raises
 :class:`SkillHubError` carrying the CLI's own message, so the CLI stays the
 authority on what is and isn't valid.
 """
 
 from ._cli import run
+from .client import SkillHubClient
 from .errors import CLINotFoundError, CLITimeoutError, CommandError, SkillHubError
-from .skills import install, search, uninstall
-from .types import InstallResult, RemoveResult, SearchResult, Skill, Target
+from .types import (
+    AgentSpec,
+    Directory,
+    FlagValue,
+    InstallResult,
+    JSONObject,
+    Payload,
+    RemoveResult,
+    Scope,
+    SearchResult,
+    Skill,
+    Target,
+)
 
 __all__ = [
-    "search",
-    "install",
-    "uninstall",
+    "SkillHubClient",
     "run",
     "SkillHubError",
     "CLINotFoundError",
@@ -32,6 +44,12 @@ __all__ = [
     "Target",
     "InstallResult",
     "RemoveResult",
+    "Scope",
+    "AgentSpec",
+    "Directory",
+    "JSONObject",
+    "Payload",
+    "FlagValue",
     "__version__",
 ]
 

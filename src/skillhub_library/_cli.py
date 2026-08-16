@@ -6,20 +6,27 @@ import json
 import os
 import shutil
 import subprocess
+from collections.abc import Sequence
 
 from .errors import CLINotFoundError, CLITimeoutError, CommandError
+from .types import FlagValue, Payload
 
 __all__ = ["run", "flags", "BINARIES", "TIMEOUT"]
 
 #: Executable names tried in order; ``$SKILLHUB_BIN`` overrides both.
-BINARIES = ("clawhub", "skillhub")
+BINARIES: tuple[str, ...] = ("clawhub", "skillhub")
 
 TIMEOUT = 120.0
 
-_UNPARSED = object()
+
+class _Unparsed:
+    """Sentinel: the CLI answered with something that isn't JSON."""
 
 
-def run(args, *, timeout=TIMEOUT):
+_UNPARSED = _Unparsed()
+
+
+def run(args: Sequence[str], *, timeout: float = TIMEOUT) -> Payload:
     """Run the CLI with ``args`` and return its stdout parsed as JSON.
 
     Output that isn't JSON is returned as a plain string. Every command answers
@@ -63,14 +70,14 @@ def run(args, *, timeout=TIMEOUT):
     return proc.stdout.strip() if payload is _UNPARSED else payload
 
 
-def _json(text):
+def _json(text: str) -> Payload | _Unparsed:
     try:
         return json.loads(text)
     except json.JSONDecodeError:
         return _UNPARSED
 
 
-def flags(**kwargs):
+def flags(**kwargs: FlagValue) -> list[str]:
     """Build CLI flags: ``None``/``False`` are skipped, lists repeat the flag.
 
     ``--json`` is always present: it guarantees the envelope and keeps the CLI
@@ -91,7 +98,7 @@ def flags(**kwargs):
     return args
 
 
-def _binary():
+def _binary() -> str:
     """Locate the CLI executable, honouring PATHEXT so Windows shims resolve."""
     names = [os.environ["SKILLHUB_BIN"]] if os.environ.get("SKILLHUB_BIN") else BINARIES
     for name in names:
