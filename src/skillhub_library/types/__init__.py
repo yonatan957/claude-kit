@@ -5,8 +5,6 @@ to a default, and ``raw`` keeps the original payload so nothing is lost. The
 CLI owns the shape -- adding a field to it must not break the wrapper.
 """
 
-from __future__ import annotations
-
 from .aliases import AgentSpec, Directory, FlagValue, JSONObject, Payload, Scope
 from .results import InstallResult, RemoveResult
 from .search import SearchResult, Skill

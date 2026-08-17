@@ -7,7 +7,7 @@ name = "skillhub-library"
 version = "0.1.0"
 description = "A small Python wrapper around the SkillHub CLI (skillhub)."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "Apache-2.0"
 dependencies = []
 

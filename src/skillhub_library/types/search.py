@@ -1,9 +1,8 @@
 """What ``search`` answers with."""
 
-from __future__ import annotations
-
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from typing import Self
 
 from .aliases import JSONObject, Payload
 
@@ -21,7 +20,7 @@ class Skill:
     raw: JSONObject = field(default_factory=dict)
 
     @classmethod
-    def from_payload(cls, payload: Payload) -> Skill:
+    def from_payload(cls, payload: Payload) -> Self:
         payload = payload if isinstance(payload, dict) else {}
         return cls(
             namespace=payload.get("namespace", ""),
@@ -40,7 +39,7 @@ class SearchResult:
     total: int = 0
 
     @classmethod
-    def from_payload(cls, payload: Payload) -> SearchResult:
+    def from_payload(cls, payload: Payload) -> Self:
         payload = payload if isinstance(payload, dict) else {}
         hits = payload.get("items")
         items = tuple(Skill.from_payload(h) for h in hits) if isinstance(hits, list) else ()

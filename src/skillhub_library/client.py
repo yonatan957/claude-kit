@@ -1,7 +1,5 @@
 """The entry point: one client that searches the registry and manages installs."""
 
-from __future__ import annotations
-
 from collections.abc import Sequence
 
 from ._cli import TIMEOUT, flags, run

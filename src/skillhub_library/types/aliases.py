@@ -5,8 +5,6 @@ words, an agent is one profile or several, a payload is whatever ``--json``
 answered with. Nothing here is validated -- the CLI stays the authority.
 """
 
-from __future__ import annotations
-
 import os
 from collections.abc import Sequence
 from typing import Any, Literal, TypeAlias

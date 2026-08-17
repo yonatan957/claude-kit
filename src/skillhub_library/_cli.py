@@ -1,7 +1,5 @@
 """Locating, invoking, and unwrapping the SkillHub CLI."""
 
-from __future__ import annotations
-
 import json
 import os
 import shutil

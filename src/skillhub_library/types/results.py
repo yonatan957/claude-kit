@@ -1,8 +1,7 @@
 """What ``install`` and ``uninstall`` answer with."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
+from typing import Self
 
 from .aliases import JSONObject, Payload
 from .targets import Target
@@ -20,7 +19,7 @@ class InstallResult:
     raw: JSONObject = field(default_factory=dict)
 
     @classmethod
-    def from_payload(cls, payload: Payload) -> InstallResult:
+    def from_payload(cls, payload: Payload) -> Self:
         payload = payload if isinstance(payload, dict) else {}
         return cls(
             namespace=payload.get("namespace", ""),
@@ -39,7 +38,7 @@ class RemoveResult:
     raw: JSONObject = field(default_factory=dict)
 
     @classmethod
-    def from_payload(cls, payload: Payload) -> RemoveResult:
+    def from_payload(cls, payload: Payload) -> Self:
         payload = payload if isinstance(payload, dict) else {}
         return cls(
             scope=payload.get("scope", ""),

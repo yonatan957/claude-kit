@@ -1,8 +1,7 @@
 """The one place an install or a removal touched."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
+from typing import Self
 
 from .aliases import JSONObject, Payload
 
@@ -24,7 +23,7 @@ class Target:
     raw: JSONObject = field(default_factory=dict)
 
     @classmethod
-    def from_payload(cls, payload: Payload) -> Target:
+    def from_payload(cls, payload: Payload) -> Self:
         payload = payload if isinstance(payload, dict) else {}
         return cls(
             agent=payload.get("agent", ""),
