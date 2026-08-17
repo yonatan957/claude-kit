@@ -1,7 +1,7 @@
 # claude-kit
 
 One uniform way to discover, install, inspect and remove the add-ons that extend Claude
-Code — **skills, agents, MCP servers, tools and plugins** — regardless of which source they
+Code — **skills, agents, MCP servers, tools (tools are general system that help claude code - installed usually with installation script) and plugins** — regardless of which source they
 come from.
 
 Without it, you have to know where each add-on lives, follow a different procedure for
