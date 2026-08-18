@@ -56,18 +56,14 @@ class InstallResult:
 
 @dataclass(frozen=True)
 class UninstallResult:
-    """``scope`` is the CLI's ``local``/``remote``."""
+    """What an uninstall took away."""
 
-    scope: str = ""
     removed_targets: tuple[Target, ...] = ()
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> Self:
         """Build one ``remove`` answer from the CLI's decoded JSON."""
-        return cls(
-            scope=payload.get("scope", ""),
-            removed_targets=_parse_targets(payload, "removed"),
-        )
+        return cls(removed_targets=_parse_targets(payload, "removed"))
 
 
 def _parse_targets(payload: dict[str, Any], action: TargetAction) -> tuple[Target, ...]:
