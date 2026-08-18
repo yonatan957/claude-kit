@@ -10,7 +10,7 @@ __all__ = ["Target"]
 
 @dataclass(frozen=True)
 class Target:
-    """One place a skill was installed to or removed from.
+    """One location on computer a skill was installed to or removed from.
 
     ``agent`` and ``directory`` say which place, and every target has them.
     ``remove`` adds ``namespace`` and ``existed``; those keep their defaults on
