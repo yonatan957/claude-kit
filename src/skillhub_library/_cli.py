@@ -7,9 +7,9 @@ import subprocess
 from collections.abc import Sequence
 
 from .errors import CLINotFoundError, CLITimeoutError, CommandError
-from .types import FlagValue, Payload
+from .types import Payload
 
-__all__ = ["run", "flags", "BINARIES", "TIMEOUT"]
+__all__ = ["run", "BINARIES", "TIMEOUT"]
 
 #: Executable names tried in order -- add a fallback here if the CLI is ever
 #: published under another name. ``$SKILLHUB_BIN`` overrides the whole list.
@@ -25,16 +25,20 @@ class _Unparsed:
 _UNPARSED = _Unparsed()
 
 
-def run(args: Sequence[str], *, timeout: float = TIMEOUT) -> Payload:
+def run(args: Sequence[str], *, timeout: float = TIMEOUT, label: str | None = None) -> Payload:
     """Run the CLI with ``args`` and return its stdout parsed as JSON.
 
     Output that isn't JSON is returned as a plain string. Every command answers
     with an ``{"ok": ...}`` envelope -- successes on stdout, failures on stderr
     -- and ``ok`` is checked before the exit code, which is what surfaces the
     CLI's own message instead of a raw JSON blob.
+
+    ``label`` is how a failure names the command it came from. Requests pass
+    their own, which is the command and its subject and no flags -- joining
+    ``args`` instead would put ``--token`` in every error message.
     """
     argv = [_binary(), *args]
-    label = " ".join(args)
+    label = label if label is not None else " ".join(args)
     try:
         proc = subprocess.run(
             argv,
@@ -74,27 +78,6 @@ def _json(text: str) -> Payload | _Unparsed:
         return json.loads(text)
     except json.JSONDecodeError:
         return _UNPARSED
-
-
-def flags(**kwargs: FlagValue) -> list[str]:
-    """Build CLI flags: ``None``/``False`` are skipped, lists repeat the flag.
-
-    ``--json`` is always present: it guarantees the envelope and keeps the CLI
-    non-interactive (it suppresses ``install``'s scope prompt).
-    """
-    args = ["--json"]
-    for name, value in kwargs.items():
-        flag = "--" + name
-        if value is None or value is False:
-            continue
-        if value is True:
-            args.append(flag)
-        elif isinstance(value, (list, tuple)):
-            for item in value:
-                args += [flag, str(item)]
-        else:
-            args += [flag, str(value)]
-    return args
 
 
 def _binary() -> str:

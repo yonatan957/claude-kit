@@ -17,11 +17,11 @@ authority on what is and isn't valid.
 
 from ._cli import run
 from .client import SkillHubClient
+from .dtos import InstallRequest, Request, SearchRequest, UninstallRequest
 from .errors import CLINotFoundError, CLITimeoutError, CommandError, SkillHubError
 from .types import (
     AgentSpec,
     Directory,
-    FlagValue,
     InstallResult,
     JSONObject,
     Payload,
@@ -49,7 +49,10 @@ __all__ = [
     "Directory",
     "JSONObject",
     "Payload",
-    "FlagValue",
+    "Request",
+    "SearchRequest",
+    "InstallRequest",
+    "UninstallRequest",
     "__version__",
 ]
 

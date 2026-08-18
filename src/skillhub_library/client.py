@@ -1,14 +1,11 @@
 """The entry point: one client that searches the registry and manages installs."""
 
-from collections.abc import Sequence
-
-from ._cli import TIMEOUT, flags, run
+from ._cli import TIMEOUT, run
+from .dtos import InstallRequest, SearchRequest, UninstallRequest
 from .types import (
     AgentSpec,
     Directory,
-    FlagValue,
     InstallResult,
-    Payload,
     RemoveResult,
     Scope,
     SearchResult,
@@ -24,7 +21,10 @@ class SkillHubClient:
         client.install("pdf-parser", agent="claude-code", scope="user")
 
     ``registry``, ``token`` and ``timeout`` are settled once here so the
-    commands themselves only take what varies between calls.
+    commands themselves only take what varies between calls. Each command
+    builds the matching request from :mod:`skillhub_library.dtos`, runs it, and
+    types the answer -- the request owns the argv, the client owns the
+    connection.
     """
 
     def __init__(
@@ -44,8 +44,13 @@ class SkillHubClient:
 
     def search(self, query: str = "", *, limit: int | None = None) -> SearchResult:
         """Search published skills. An empty ``query`` lists everything."""
-        search_result = self._run(["search", query], limit=limit)
-        return SearchResult.from_payload(search_result)
+        request = SearchRequest(query=query, limit=limit)
+        payload = run(
+            request.to_args(registry=self.registry, token=self.token),
+            timeout=self.timeout,
+            label=request.label,
+        )
+        return SearchResult.from_payload(payload)
 
     def install(
         self,
@@ -64,13 +69,18 @@ class SkillHubClient:
         may be one profile name or a list of them. ``directory`` installs to a
         custom path and cannot be combined with ``scope`` or ``agent``.
         """
-        payload = self._run(
-            ["install", name],
+        request = InstallRequest(
+            name=name,
             version=version,
-            scope=scope,
             agent=agent,
-            dir=directory,
+            scope=scope,
+            directory=directory,
             force=force,
+        )
+        payload = run(
+            request.to_args(registry=self.registry, token=self.token),
+            timeout=self.timeout,
+            label=request.label,
         )
         return InstallResult.from_payload(payload)
 
@@ -87,10 +97,10 @@ class SkillHubClient:
         namespaced ``team/slug`` to narrow it to one. ``all_targets`` removes
         every target without prompting.
         """
-        payload = self._run(["remove", name], agent=agent, all=all_targets)
+        request = UninstallRequest(name=name, agent=agent, all_targets=all_targets)
+        payload = run(
+            request.to_args(registry=self.registry, token=self.token),
+            timeout=self.timeout,
+            label=request.label,
+        )
         return RemoveResult.from_payload(payload)
-
-    def _run(self, command: Sequence[str], **options: FlagValue) -> Payload:
-        """Run ``command`` with this client's registry, token and timeout."""
-        args = [*command, *flags(registry=self.registry, token=self.token, **options)]
-        return run(args, timeout=self.timeout)

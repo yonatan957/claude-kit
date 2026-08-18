@@ -5,7 +5,7 @@ to a default, and ``raw`` keeps the original payload so nothing is lost. The
 CLI owns the shape -- adding a field to it must not break the wrapper.
 """
 
-from .aliases import AgentSpec, Directory, FlagValue, JSONObject, Payload, Scope
+from .aliases import AgentSpec, Directory, JSONObject, Payload, Scope
 from .results import InstallResult, RemoveResult
 from .search import SearchResult, Skill
 from .targets import Target
@@ -16,7 +16,6 @@ __all__ = [
     "Directory",
     "JSONObject",
     "Payload",
-    "FlagValue",
     "Skill",
     "SearchResult",
     "Target",

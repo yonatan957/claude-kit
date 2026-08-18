@@ -9,7 +9,7 @@ import os
 from collections.abc import Sequence
 from typing import Any, Literal, TypeAlias
 
-__all__ = ["Scope", "AgentSpec", "Directory", "JSONObject", "Payload", "FlagValue"]
+__all__ = ["Scope", "AgentSpec", "Directory", "JSONObject", "Payload"]
 
 #: ``--scope``: which of an agent's two skills directories to install into.
 Scope: TypeAlias = Literal["user", "project"]
@@ -26,7 +26,3 @@ JSONObject: TypeAlias = dict[str, Any]
 
 #: What the CLI answers with: decoded JSON, or plain text when it isn't JSON.
 Payload: TypeAlias = JSONObject | list[Any] | str | int | float | bool | None
-
-#: One keyword accepted by :func:`skillhub_library._cli.flags`. ``None`` and
-#: ``False`` drop the flag, ``True`` makes it bare, a sequence repeats it.
-FlagValue: TypeAlias = Directory | bool | int | Sequence[str] | None
