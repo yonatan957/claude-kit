@@ -20,6 +20,7 @@ from .client import SkillHubClient
 from .dtos import InstallRequest, Request, SearchRequest, UninstallRequest
 from .errors import CLINotFoundError, CLITimeoutError, CommandError, SkillHubError
 from .types import (
+    Agent,
     AgentSpec,
     Directory,
     InstallResult,
@@ -43,6 +44,7 @@ __all__ = [
     "InstallResult",
     "UninstallResult",
     "Scope",
+    "Agent",
     "AgentSpec",
     "Directory",
     "Request",
