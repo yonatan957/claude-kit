@@ -49,9 +49,8 @@ class SkillHubClient:
 
     def install(
         self,
-        coordinate: str,
+        name: str,
         *,
-        namespace: str | None = None,
         version: str | None = None,
         agent: AgentSpec | None = None,
         scope: Scope | None = None,
@@ -60,13 +59,13 @@ class SkillHubClient:
     ) -> InstallResult:
         """Install a skill.
 
-        ``coordinate`` is ``slug``, ``team/slug``, ``@team/slug`` or ``team--slug``.
-        ``agent`` may be one profile name or a list of them. ``directory`` installs
-        to a custom path and cannot be combined with ``scope`` or ``agent``.
+        ``name`` is ``slug``, ``team/slug``, ``@team/slug`` or ``team--slug``;
+        :attr:`~.Skill.name` gives the namespaced form of a search hit. ``agent``
+        may be one profile name or a list of them. ``directory`` installs to a
+        custom path and cannot be combined with ``scope`` or ``agent``.
         """
         payload = self._run(
-            ["install", coordinate],
-            namespace=namespace,
+            ["install", name],
             version=version,
             scope=scope,
             agent=agent,
@@ -77,21 +76,18 @@ class SkillHubClient:
 
     def uninstall(
         self,
-        coordinate: str,
+        name: str,
         *,
-        namespace: str | None = None,
         agent: AgentSpec | None = None,
         all_targets: bool = False,
     ) -> RemoveResult:
         """Remove an installed skill (the CLI's ``remove``).
 
-        A bare slug removes matching installations across namespaces; pass a
-        namespaced coordinate or ``namespace=`` to narrow it. ``all_targets``
-        removes every target without prompting.
+        A bare slug removes matching installations across namespaces; pass the
+        namespaced ``team/slug`` to narrow it to one. ``all_targets`` removes
+        every target without prompting.
         """
-        payload = self._run(
-            ["remove", coordinate], namespace=namespace, agent=agent, all=all_targets
-        )
+        payload = self._run(["remove", name], agent=agent, all=all_targets)
         return RemoveResult.from_payload(payload)
 
     def _run(self, command: Sequence[str], **options: FlagValue) -> Payload:

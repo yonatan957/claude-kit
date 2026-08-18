@@ -30,6 +30,15 @@ class Skill:
             raw=payload,
         )
 
+    @property
+    def name(self) -> str:
+        """What ``install``/``uninstall`` take: ``namespace/slug``, else the slug.
+
+        The slug alone matches the skill in every namespace that publishes it, so
+        this is what you want whenever you mean *this* hit and no other.
+        """
+        return f"{self.namespace}/{self.slug}" if self.namespace else self.slug
+
 
 @dataclass(frozen=True)
 class SearchResult:
