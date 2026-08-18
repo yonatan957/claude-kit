@@ -23,8 +23,9 @@ class SkillHubClient:
     ``registry``, ``token`` and ``timeout`` are settled once here so the
     commands themselves only take what varies between calls. Each command
     builds the matching request from :mod:`skillhub_library.dtos`, runs it, and
-    types the answer -- the request owns the argv, the client owns the
-    connection.
+    hands the answer to the result type: the request owns the argv,
+    :func:`~._cli.run` owns the process, and the result owns how to read the
+    stdout it comes back as.
     """
 
     def __init__(
@@ -45,12 +46,12 @@ class SkillHubClient:
     def search(self, query: str = "", *, limit: int | None = None) -> SearchResult:
         """Search published skills. An empty ``query`` lists everything."""
         request = SearchRequest(query=query, limit=limit)
-        payload = run(
+        stdout = run(
             request.to_args(registry=self.registry, token=self.token),
             timeout=self.timeout,
             label=request.label,
         )
-        return SearchResult.from_payload(payload)
+        return SearchResult.from_payload(stdout)
 
     def install(
         self,
@@ -77,12 +78,12 @@ class SkillHubClient:
             directory=directory,
             force=force,
         )
-        payload = run(
+        stdout = run(
             request.to_args(registry=self.registry, token=self.token),
             timeout=self.timeout,
             label=request.label,
         )
-        return InstallResult.from_payload(payload)
+        return InstallResult.from_payload(stdout)
 
     def uninstall(
         self,
@@ -98,9 +99,9 @@ class SkillHubClient:
         every target without prompting.
         """
         request = UninstallRequest(name=name, agent=agent, all_targets=all_targets)
-        payload = run(
+        stdout = run(
             request.to_args(registry=self.registry, token=self.token),
             timeout=self.timeout,
             label=request.label,
         )
-        return RemoveResult.from_payload(payload)
+        return RemoveResult.from_payload(stdout)

@@ -1,4 +1,4 @@
-"""Locating, invoking, and unwrapping the SkillHub CLI."""
+"""Locating and invoking the SkillHub CLI."""
 
 import json
 import os
@@ -7,7 +7,7 @@ import subprocess
 from collections.abc import Sequence
 
 from .errors import CLINotFoundError, CLITimeoutError, CommandError
-from .types import Payload
+from .types import JSONObject
 
 __all__ = ["run", "BINARIES", "TIMEOUT"]
 
@@ -18,20 +18,8 @@ BINARIES: tuple[str, ...] = ("skillhub",)  # note the comma: a 1-tuple, not a st
 TIMEOUT = 120.0
 
 
-class _Unparsed:
-    """Sentinel: the CLI answered with something that isn't JSON."""
-
-
-_UNPARSED = _Unparsed()
-
-
-def run(args: Sequence[str], *, timeout: float = TIMEOUT, label: str | None = None) -> Payload:
-    """Run the CLI with ``args`` and return its stdout parsed as JSON.
-
-    Output that isn't JSON is returned as a plain string. Every command answers
-    with an ``{"ok": ...}`` envelope -- successes on stdout, failures on stderr
-    -- and ``ok`` is checked before the exit code, which is what surfaces the
-    CLI's own message instead of a raw JSON blob.
+def run(args: Sequence[str], *, timeout: float = TIMEOUT, label: str | None = None) -> str:
+    """Run the CLI with ``args`` and return its stdout, or raise.
 
     ``label`` is how a failure names the command it came from. Requests pass
     their own, which is the command and its subject and no flags -- joining
@@ -52,32 +40,44 @@ def run(args: Sequence[str], *, timeout: float = TIMEOUT, label: str | None = No
     except subprocess.TimeoutExpired:
         raise CLITimeoutError(f"`{label}` timed out after {timeout}s") from None
 
-    payload = _json(proc.stdout)
-    # Successes answer on stdout, failure envelopes on stderr.
-    envelope = payload if isinstance(payload, dict) else _json(proc.stderr)
-
-    if isinstance(envelope, dict) and envelope.get("ok") is False:
-        raise CommandError(
-            label,
-            message=envelope.get("message") or "no message",
-            returncode=proc.returncode,
-            details=envelope.get("details"),
-            raw=envelope,
-        )
     if proc.returncode != 0:
-        raise CommandError(
-            label,
-            message=proc.stderr.strip() or proc.stdout.strip() or "no output",
-            returncode=proc.returncode,
-        )
-    return proc.stdout.strip() if payload is _UNPARSED else payload
+        raise _failure(label, proc.returncode, proc.stderr, proc.stdout)
+    return proc.stdout.strip()
 
 
-def _json(text: str) -> Payload | _Unparsed:
+def _failure(label: str, code: int, stderr: str, stdout: str) -> CommandError:
+    """The richest error the CLI's own output allows.
+
+    Failure envelopes come back on stderr; preferring the message inside one is
+    what surfaces the CLI's own words instead of a raw JSON blob.
+    """
+    for text in (stderr, stdout):
+        if not isParsable(text):
+            continue
+        reported: JSONObject = json.loads(text)
+        if reported.get("ok") is False:
+            return CommandError(
+                label,
+                message=reported.get("message") or "no message",
+                returncode=code,
+                details=reported.get("details"),
+                raw=reported,
+            )
+        break
+    return CommandError(
+        label,
+        message=stderr.strip() or stdout.strip() or "no output",
+        returncode=code,
+    )
+
+
+def isParsable(text: str) -> bool:
+    """Whether ``text`` decodes as a JSON object -- not merely as JSON."""
     try:
-        return json.loads(text)
+        decoded = json.loads(text)
     except json.JSONDecodeError:
-        return _UNPARSED
+        return False
+    return isinstance(decoded, dict)
 
 
 def _binary() -> str:

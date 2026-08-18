@@ -1,9 +1,10 @@
 """What ``install`` and ``uninstall`` answer with."""
 
+import json
 from dataclasses import dataclass, field
 from typing import Self
 
-from .aliases import JSONObject, Payload
+from .aliases import JSONObject
 from .targets import Target
 
 __all__ = ["InstallResult", "RemoveResult"]
@@ -19,8 +20,9 @@ class InstallResult:
     raw: JSONObject = field(default_factory=dict)
 
     @classmethod
-    def from_payload(cls, payload: Payload) -> Self:
-        payload = payload if isinstance(payload, dict) else {}
+    def from_payload(cls, text: str) -> Self:
+        """Decode one ``install`` answer straight from the CLI's stdout."""
+        payload = json.loads(text)
         return cls(
             namespace=payload.get("namespace", ""),
             slug=payload.get("slug", ""),
@@ -38,8 +40,9 @@ class RemoveResult:
     raw: JSONObject = field(default_factory=dict)
 
     @classmethod
-    def from_payload(cls, payload: Payload) -> Self:
-        payload = payload if isinstance(payload, dict) else {}
+    def from_payload(cls, text: str) -> Self:
+        """Decode one ``remove`` answer straight from the CLI's stdout."""
+        payload = json.loads(text)
         return cls(
             scope=payload.get("scope", ""),
             removed=_targets(payload, "removed"),
@@ -49,4 +52,4 @@ class RemoveResult:
 
 def _targets(payload: JSONObject, key: str) -> tuple[Target, ...]:
     entries = payload.get(key)
-    return tuple(Target.from_payload(e) for e in entries) if isinstance(entries, list) else ()
+    return tuple(Target.from_object(e) for e in entries) if isinstance(entries, list) else ()

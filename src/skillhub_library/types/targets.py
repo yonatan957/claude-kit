@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Self
 
-from .aliases import JSONObject, Payload
+from .aliases import JSONObject
 
 __all__ = ["Target"]
 
@@ -23,7 +23,8 @@ class Target:
     raw: JSONObject = field(default_factory=dict)
 
     @classmethod
-    def from_payload(cls, payload: Payload) -> Self:
+    def from_object(cls, payload: JSONObject) -> Self:
+        """Build from one element of the CLI's ``installed``/``removed`` list."""
         payload = payload if isinstance(payload, dict) else {}
         return cls(
             agent=payload.get("agent", ""),

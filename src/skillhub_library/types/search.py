@@ -1,10 +1,11 @@
 """What ``search`` answers with."""
 
+import json
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Self
 
-from .aliases import JSONObject, Payload
+from .aliases import JSONObject
 
 __all__ = ["Skill", "SearchResult"]
 
@@ -20,7 +21,8 @@ class Skill:
     raw: JSONObject = field(default_factory=dict)
 
     @classmethod
-    def from_payload(cls, payload: Payload) -> Self:
+    def from_object(cls, payload: JSONObject) -> Self:
+        """Build from one element of the CLI's ``items`` list."""
         payload = payload if isinstance(payload, dict) else {}
         return cls(
             namespace=payload.get("namespace", ""),
@@ -48,10 +50,11 @@ class SearchResult:
     total: int = 0
 
     @classmethod
-    def from_payload(cls, payload: Payload) -> Self:
-        payload = payload if isinstance(payload, dict) else {}
+    def from_payload(cls, text: str) -> Self:
+        """Decode one ``search`` answer straight from the CLI's stdout."""
+        payload = json.loads(text)
         hits = payload.get("items")
-        items = tuple(Skill.from_payload(h) for h in hits) if isinstance(hits, list) else ()
+        items = tuple(Skill.from_object(h) for h in hits) if isinstance(hits, list) else ()
         total = payload.get("total")
         return cls(items=items, total=total if isinstance(total, int) else len(items))
 

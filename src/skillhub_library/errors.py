@@ -4,9 +4,14 @@ Everything subclasses :class:`SkillHubError`, so ``except SkillHubError`` keeps
 catching the lot.
 """
 
-from .types import JSONObject, Payload
+from typing import Any
 
-__all__ = ["SkillHubError", "CLINotFoundError", "CLITimeoutError", "CommandError"]
+__all__ = [
+    "SkillHubError",
+    "CLINotFoundError",
+    "CLITimeoutError",
+    "CommandError",
+]
 
 
 class SkillHubError(RuntimeError):
@@ -30,8 +35,8 @@ class CommandError(SkillHubError):
         *,
         message: str,
         returncode: int | None = None,
-        details: JSONObject | None = None,
-        raw: Payload = None,
+        details: dict[str, Any] | None = None,
+        raw: Any = None,
     ) -> None:
         self.command = command
         self.message = message
