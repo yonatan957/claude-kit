@@ -9,7 +9,7 @@ here: what these types carry is what this library promises, the same way
 :mod:`skillhub_library.dtos` names every flag it can ever send.
 """
 
-from .aliases import Agent, AgentSpec, Directory, Scope
+from .aliases import Agent, AgentSpec, Directory, Scope, TargetAction
 from .results import InstallResult, SearchResult, UninstallResult
 from .skill import Skill
 from .targets import Target
@@ -22,6 +22,7 @@ __all__ = [
     "Skill",
     "SearchResult",
     "Target",
+    "TargetAction",
     "InstallResult",
     "UninstallResult",
 ]

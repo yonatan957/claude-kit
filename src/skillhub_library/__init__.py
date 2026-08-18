@@ -28,6 +28,7 @@ from .types import (
     SearchResult,
     Skill,
     Target,
+    TargetAction,
     UninstallResult,
 )
 
@@ -41,6 +42,7 @@ __all__ = [
     "Skill",
     "SearchResult",
     "Target",
+    "TargetAction",
     "InstallResult",
     "UninstallResult",
     "Scope",

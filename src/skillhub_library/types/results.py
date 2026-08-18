@@ -4,6 +4,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Self
 
+from .aliases import TargetAction
 from .skill import Skill
 from .targets import Target
 
@@ -41,7 +42,7 @@ class InstallResult:
 
     namespace: str = ""
     slug: str = ""
-    installed: tuple[Target, ...] = ()
+    installed_targets: tuple[Target, ...] = ()
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> Self:
@@ -49,7 +50,7 @@ class InstallResult:
         return cls(
             namespace=payload.get("namespace", ""),
             slug=payload.get("slug", ""),
-            installed=_targets(payload, "installed"),
+            installed_targets=_parse_targets(payload, "installed"),
         )
 
 
@@ -58,17 +59,18 @@ class UninstallResult:
     """What an uninstall took away. ``scope`` is the CLI's ``local``/``remote``."""
 
     scope: str = ""
-    removed: tuple[Target, ...] = ()
+    removed_targets: tuple[Target, ...] = ()
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> Self:
         """Build one ``remove`` answer from the CLI's decoded JSON."""
         return cls(
             scope=payload.get("scope", ""),
-            removed=_targets(payload, "removed"),
+            removed_targets=_parse_targets(payload, "removed"),
         )
 
 
-def _targets(payload: dict[str, Any], key: str) -> tuple[Target, ...]:
-    entries = payload.get(key)
+def _parse_targets(payload: dict[str, Any], action: TargetAction) -> tuple[Target, ...]:
+    """Read the payload's ``installed`` or ``removed`` list into targets."""
+    entries = payload.get(action)
     return tuple(Target.from_payload(e) for e in entries) if isinstance(entries, list) else ()
