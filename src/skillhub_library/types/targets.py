@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from typing import Any, Self
 
+from ..errors import MalformedAnswerError
+
 __all__ = ["Target"]
 
 
@@ -10,22 +12,25 @@ __all__ = ["Target"]
 class Target:
     """One place a skill was installed to or removed from.
 
-    ``install`` reports only ``agent``/``directory``; ``remove`` adds
-    ``namespace`` and ``existed``, which stay at their defaults otherwise.
+    ``agent`` and ``directory`` say which place, and every target has them.
+    ``remove`` adds ``namespace`` and ``existed``; those keep their defaults on
+    an install, which is why they are the only two that have any.
     """
 
-    agent: str = ""
-    directory: str = ""  # the CLI's "dir"
+    agent: str
+    directory: str  # the CLI's "dir"
     namespace: str = ""
     existed: bool | None = None
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> Self:
         """Build from one element of the CLI's ``installed``/``removed`` list."""
-        payload = payload if isinstance(payload, dict) else {}
-        return cls(
-            agent=payload.get("agent", ""),
-            directory=payload.get("dir", ""),
-            namespace=payload.get("namespace", ""),
-            existed=payload.get("existed"),
-        )
+        try:
+            return cls(
+                agent=payload["agent"],
+                directory=payload["dir"],
+                namespace=payload.get("namespace", ""),
+                existed=payload.get("existed"),
+            )
+        except (KeyError, TypeError) as unusable:
+            raise MalformedAnswerError(f"unusable target: {unusable}") from unusable

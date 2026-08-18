@@ -18,7 +18,13 @@ authority on what is and isn't valid.
 from ._cli import run
 from .client import SkillHubClient
 from .dtos import InstallRequest, Request, SearchRequest, UninstallRequest
-from .errors import CLINotFoundError, CLITimeoutError, CommandError, SkillHubError
+from .errors import (
+    CLINotFoundError,
+    CLITimeoutError,
+    CommandError,
+    MalformedAnswerError,
+    SkillHubError,
+)
 from .types import (
     Agent,
     AgentSpec,
@@ -39,6 +45,7 @@ __all__ = [
     "CLINotFoundError",
     "CLITimeoutError",
     "CommandError",
+    "MalformedAnswerError",
     "Skill",
     "SearchResult",
     "Target",

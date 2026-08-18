@@ -4,6 +4,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Self
 
+from ..errors import MalformedAnswerError
 from .aliases import TargetAction
 from .skill import Skill
 from .targets import Target
@@ -15,58 +16,66 @@ __all__ = ["SearchResult", "InstallResult", "UninstallResult"]
 class SearchResult:
     """Iterates and ``len()``s like a list of :class:`Skill`, but keeps ``total``."""
 
-    items: tuple[Skill, ...] = ()
-    total: int = 0
+    skills: tuple[Skill, ...]
+    total: int
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> Self:
         """Build one ``search`` answer from the CLI's decoded JSON."""
-        hits = payload.get("items")
-        items = tuple(Skill.from_payload(h) for h in hits) if isinstance(hits, list) else ()
-        total = payload.get("total")
-        return cls(items=items, total=total if isinstance(total, int) else len(items))
+        try:
+            return cls(
+                skills=tuple(Skill.from_payload(h) for h in payload["items"]),
+                total=payload["total"],
+            )
+        except (KeyError, TypeError) as unusable:
+            raise MalformedAnswerError(f"unusable search answer: {unusable}") from unusable
 
     def __iter__(self) -> Iterator[Skill]:
-        return iter(self.items)
+        return iter(self.skills)
 
     def __len__(self) -> int:
-        return len(self.items)
+        return len(self.skills)
 
     def __getitem__(self, index: int) -> Skill:
-        return self.items[index]
+        return self.skills[index]
 
 
 @dataclass(frozen=True)
 class InstallResult:
     """Where an install put the skill."""
 
-    namespace: str = ""
-    slug: str = ""
-    installed_targets: tuple[Target, ...] = ()
+    namespace: str
+    slug: str
+    installed_targets: tuple[Target, ...]
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> Self:
         """Build one ``install`` answer from the CLI's decoded JSON."""
-        return cls(
-            namespace=payload.get("namespace", ""),
-            slug=payload.get("slug", ""),
-            installed_targets=_parse_targets(payload, "installed"),
-        )
+        try:
+            return cls(
+                namespace=payload["namespace"],
+                slug=payload["slug"],
+                installed_targets=_parse_targets(payload, "installed"),
+            )
+        except (KeyError, TypeError) as unusable:
+            raise MalformedAnswerError(f"unusable install answer: {unusable}") from unusable
 
 
 @dataclass(frozen=True)
 class UninstallResult:
     """What an uninstall took away."""
 
-    removed_targets: tuple[Target, ...] = ()
+    removed_targets: tuple[Target, ...]
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> Self:
         """Build one ``remove`` answer from the CLI's decoded JSON."""
-        return cls(removed_targets=_parse_targets(payload, "removed"))
+        try:
+            return cls(removed_targets=_parse_targets(payload, "removed"))
+        except (KeyError, TypeError) as unusable:
+            raise MalformedAnswerError(f"unusable remove answer: {unusable}") from unusable
 
 
 def _parse_targets(payload: dict[str, Any], action: TargetAction) -> tuple[Target, ...]:
     """Read the payload's ``installed`` or ``removed`` list into targets."""
-    entries = payload.get(action)
-    return tuple(Target.from_payload(e) for e in entries) if isinstance(entries, list) else ()
+    return tuple(Target.from_payload(e) for e in payload[action])
