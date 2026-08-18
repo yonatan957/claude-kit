@@ -5,9 +5,9 @@ import os
 import shutil
 import subprocess
 from collections.abc import Sequence
+from typing import Any
 
 from .errors import CLINotFoundError, CLITimeoutError, CommandError
-from .types import JSONObject
 
 __all__ = ["run", "BINARIES", "TIMEOUT"]
 
@@ -52,9 +52,9 @@ def _failure(label: str, code: int, stderr: str, stdout: str) -> CommandError:
     what surfaces the CLI's own words instead of a raw JSON blob.
     """
     for text in (stderr, stdout):
-        if not isParsable(text):
+        if not _is_parsable(text):
             continue
-        reported: JSONObject = json.loads(text)
+        reported: dict[str, Any] = json.loads(text)
         if reported.get("ok") is False:
             return CommandError(
                 label,
@@ -71,7 +71,7 @@ def _failure(label: str, code: int, stderr: str, stdout: str) -> CommandError:
     )
 
 
-def isParsable(text: str) -> bool:
+def _is_parsable(text: str) -> bool:
     """Whether ``text`` decodes as a JSON object -- not merely as JSON."""
     try:
         decoded = json.loads(text)

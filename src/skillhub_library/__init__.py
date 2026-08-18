@@ -23,12 +23,11 @@ from .types import (
     AgentSpec,
     Directory,
     InstallResult,
-    JSONObject,
-    RemoveResult,
     Scope,
     SearchResult,
     Skill,
     Target,
+    UninstallResult,
 )
 
 __all__ = [
@@ -42,11 +41,10 @@ __all__ = [
     "SearchResult",
     "Target",
     "InstallResult",
-    "RemoveResult",
+    "UninstallResult",
     "Scope",
     "AgentSpec",
     "Directory",
-    "JSONObject",
     "Request",
     "SearchRequest",
     "InstallRequest",

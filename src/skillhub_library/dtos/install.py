@@ -13,12 +13,14 @@ __all__ = ["InstallRequest"]
 class InstallRequest(Request):
     """Install one skill.
 
-    ``name`` is ``slug``, ``team/slug``, ``@team/slug`` or ``team--slug``.
+    ``slug`` is the skill's own id and ``namespace`` is the account that
+    published it -- the CLI takes them as two arguments and defaults the
+    namespace to ``global``, so a search hit's two fields go in unchanged.
     ``agent`` may be one profile name or a list of them.
     """
 
-    name: str
-    version: str | None = None
+    slug: str
+    namespace: str | None = None
     agent: AgentSpec | None = None
     scope: Scope | None = None
     directory: Directory | None = None
@@ -36,9 +38,9 @@ class InstallRequest(Request):
     def to_args(self, *, registry: str | None = None, token: str | None = None) -> list[str]:
         return [
             "install",
-            self.name,
+            self.slug,
             *connection(registry, token),
-            *option("--version", self.version),
+            *option("--namespace", self.namespace),
             *option("--scope", self.scope),
             *repeated("--agent", self.agent),
             *path("--dir", self.directory),
@@ -47,4 +49,4 @@ class InstallRequest(Request):
 
     @property
     def label(self) -> str:
-        return f"install {self.name}"
+        return f"install {self.slug}"

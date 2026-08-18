@@ -1,13 +1,38 @@
-"""What ``install`` and ``uninstall`` answer with."""
+"""What ``search``, ``install`` and ``uninstall`` answer with."""
 
-import json
-from dataclasses import dataclass, field
-from typing import Self
+from collections.abc import Iterator
+from dataclasses import dataclass
+from typing import Any, Self
 
-from .aliases import JSONObject
+from .skill import Skill
 from .targets import Target
 
-__all__ = ["InstallResult", "RemoveResult"]
+__all__ = ["SearchResult", "InstallResult", "UninstallResult"]
+
+
+@dataclass(frozen=True)
+class SearchResult:
+    """Iterates and ``len()``s like a list of :class:`Skill`, but keeps ``total``."""
+
+    items: tuple[Skill, ...] = ()
+    total: int = 0
+
+    @classmethod
+    def from_payload(cls, payload: dict[str, Any]) -> Self:
+        """Build one ``search`` answer from the CLI's decoded JSON."""
+        hits = payload.get("items")
+        items = tuple(Skill.from_payload(h) for h in hits) if isinstance(hits, list) else ()
+        total = payload.get("total")
+        return cls(items=items, total=total if isinstance(total, int) else len(items))
+
+    def __iter__(self) -> Iterator[Skill]:
+        return iter(self.items)
+
+    def __len__(self) -> int:
+        return len(self.items)
+
+    def __getitem__(self, index: int) -> Skill:
+        return self.items[index]
 
 
 @dataclass(frozen=True)
@@ -17,39 +42,33 @@ class InstallResult:
     namespace: str = ""
     slug: str = ""
     installed: tuple[Target, ...] = ()
-    raw: JSONObject = field(default_factory=dict)
 
     @classmethod
-    def from_payload(cls, text: str) -> Self:
-        """Decode one ``install`` answer straight from the CLI's stdout."""
-        payload = json.loads(text)
+    def from_payload(cls, payload: dict[str, Any]) -> Self:
+        """Build one ``install`` answer from the CLI's decoded JSON."""
         return cls(
             namespace=payload.get("namespace", ""),
             slug=payload.get("slug", ""),
             installed=_targets(payload, "installed"),
-            raw=payload,
         )
 
 
 @dataclass(frozen=True)
-class RemoveResult:
-    """What a removal took away. ``scope`` is the CLI's ``local``/``remote``."""
+class UninstallResult:
+    """What an uninstall took away. ``scope`` is the CLI's ``local``/``remote``."""
 
     scope: str = ""
     removed: tuple[Target, ...] = ()
-    raw: JSONObject = field(default_factory=dict)
 
     @classmethod
-    def from_payload(cls, text: str) -> Self:
-        """Decode one ``remove`` answer straight from the CLI's stdout."""
-        payload = json.loads(text)
+    def from_payload(cls, payload: dict[str, Any]) -> Self:
+        """Build one ``remove`` answer from the CLI's decoded JSON."""
         return cls(
             scope=payload.get("scope", ""),
             removed=_targets(payload, "removed"),
-            raw=payload,
         )
 
 
-def _targets(payload: JSONObject, key: str) -> tuple[Target, ...]:
+def _targets(payload: dict[str, Any], key: str) -> tuple[Target, ...]:
     entries = payload.get(key)
-    return tuple(Target.from_object(e) for e in entries) if isinstance(entries, list) else ()
+    return tuple(Target.from_payload(e) for e in entries) if isinstance(entries, list) else ()

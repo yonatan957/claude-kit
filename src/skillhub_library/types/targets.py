@@ -1,9 +1,7 @@
 """The one place an install or a removal touched."""
 
-from dataclasses import dataclass, field
-from typing import Self
-
-from .aliases import JSONObject
+from dataclasses import dataclass
+from typing import Any, Self
 
 __all__ = ["Target"]
 
@@ -20,10 +18,9 @@ class Target:
     directory: str = ""  # the CLI's "dir"
     namespace: str = ""
     existed: bool | None = None
-    raw: JSONObject = field(default_factory=dict)
 
     @classmethod
-    def from_object(cls, payload: JSONObject) -> Self:
+    def from_payload(cls, payload: dict[str, Any]) -> Self:
         """Build from one element of the CLI's ``installed``/``removed`` list."""
         payload = payload if isinstance(payload, dict) else {}
         return cls(
@@ -31,5 +28,4 @@ class Target:
             directory=payload.get("dir", ""),
             namespace=payload.get("namespace", ""),
             existed=payload.get("existed"),
-            raw=payload,
         )

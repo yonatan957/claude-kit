@@ -7,9 +7,9 @@ stays the authority.
 
 import os
 from collections.abc import Sequence
-from typing import Any, Literal, TypeAlias
+from typing import Literal, TypeAlias
 
-__all__ = ["Scope", "AgentSpec", "Directory", "JSONObject"]
+__all__ = ["Scope", "AgentSpec", "Directory"]
 
 #: ``--scope``: which of an agent's two skills directories to install into.
 Scope: TypeAlias = Literal["user", "project"]
@@ -20,6 +20,3 @@ AgentSpec: TypeAlias = str | Sequence[str]
 
 #: ``--dir``: a custom install path, as a string or anything ``os.PathLike``.
 Directory: TypeAlias = str | os.PathLike[str]
-
-#: A decoded JSON object -- what every result is built from.
-JSONObject: TypeAlias = dict[str, Any]

@@ -1,25 +1,26 @@
 """Typed views over the CLI's JSON payloads, plus the aliases its flags take.
 
-``from_payload`` takes the CLI's stdout and decodes it, trusting :func:`~.run`
-to have already refused anything that was not an answer. The shape itself is
-forgiven: unknown keys are ignored, missing keys fall back to a default, and
-``raw`` keeps the original payload so nothing is lost. The CLI owns the shape
--- adding a field to it must not break the wrapper.
+``from_payload`` takes the CLI's answer already decoded -- the client owns the
+JSON, these types own its shape -- and trusts :func:`~.run` to have refused
+anything that was not an answer. The shape itself is forgiven: unknown keys are
+ignored and missing keys fall back to a default, so a field added to the CLI's
+output cannot break the wrapper. Reading a new field, though, means naming it
+here: what these types carry is what this library promises, the same way
+:mod:`skillhub_library.dtos` names every flag it can ever send.
 """
 
-from .aliases import AgentSpec, Directory, JSONObject, Scope
-from .results import InstallResult, RemoveResult
-from .search import SearchResult, Skill
+from .aliases import AgentSpec, Directory, Scope
+from .results import InstallResult, SearchResult, UninstallResult
+from .skill import Skill
 from .targets import Target
 
 __all__ = [
     "Scope",
     "AgentSpec",
     "Directory",
-    "JSONObject",
     "Skill",
     "SearchResult",
     "Target",
     "InstallResult",
-    "RemoveResult",
+    "UninstallResult",
 ]

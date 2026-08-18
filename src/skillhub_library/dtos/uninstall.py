@@ -11,21 +11,22 @@ __all__ = ["UninstallRequest"]
 
 @dataclass(frozen=True)
 class UninstallRequest(Request):
-    """Remove an installed skill.
+    """Remove one skill's local installs.
 
-    A bare slug removes matching installations across namespaces; pass the
-    namespaced ``team/slug`` to narrow it to one. ``all_targets`` removes every
-    target without prompting.
+    ``slug`` alone is what the CLI takes: a local removal matches by slug
+    across namespaces. (The CLI's ``--namespace`` narrows a *remote* delete,
+    which this library does not do.) ``all_targets`` removes every target
+    without prompting.
     """
 
-    name: str
+    slug: str
     agent: AgentSpec | None = None
     all_targets: bool = False
 
     def to_args(self, *, registry: str | None = None, token: str | None = None) -> list[str]:
         return [
             "remove",
-            self.name,
+            self.slug,
             *connection(registry, token),
             *repeated("--agent", self.agent),
             *switch("--all", self.all_targets),
@@ -33,4 +34,4 @@ class UninstallRequest(Request):
 
     @property
     def label(self) -> str:
-        return f"remove {self.name}"
+        return f"remove {self.slug}"
