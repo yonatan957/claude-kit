@@ -56,7 +56,7 @@ class InstallResult:
 
 @dataclass(frozen=True)
 class UninstallResult:
-    """What an uninstall took away. ``scope`` is the CLI's ``local``/``remote``."""
+    """``scope`` is the CLI's ``local``/``remote``."""
 
     scope: str = ""
     removed_targets: tuple[Target, ...] = ()

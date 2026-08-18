@@ -1,5 +1,3 @@
-"""One published skill, as ``search`` describes it."""
-
 from dataclasses import dataclass
 from typing import Any, Self
 
@@ -8,8 +6,7 @@ __all__ = ["Skill"]
 
 @dataclass(frozen=True)
 class Skill:
-    """One search hit.
-
+    """
     ``namespace`` is the account that published it -- the shared public one is
     ``"global"`` -- and ``slug`` is the skill's own id inside it. Both go back
     to :meth:`~.SkillHubClient.install` as they are: the CLI keeps them apart.
