@@ -2,7 +2,7 @@
 
 import json
 
-from ._cli import TIMEOUT, run
+from ._cli import run
 from .dtos import InstallRequest, SearchRequest, UninstallRequest
 from .types import (
     AgentSpec,
@@ -22,8 +22,9 @@ class SkillHubClient:
         client = SkillHubClient(token="...")
         client.install("pdf-parser", agent="claude-code", scope="user")
 
-    ``registry``, ``token`` and ``timeout`` are settled once here so the
-    commands themselves only take what varies between calls. Each command
+    ``registry`` and ``token`` are settled once here so the commands
+    themselves only take what varies between calls. The timeout is not a
+    knob: :data:`~.consts.REQUEST_TIMEOUT` bounds every request. Each command
     builds the matching request from :mod:`skillhub_library.dtos`, runs it, and
     hands the decoded answer to the result type: the request owns the argv,
     :func:`~._cli.run` owns the process, the client turns stdout into JSON, and
@@ -35,11 +36,9 @@ class SkillHubClient:
         *,
         registry: str | None = None,
         token: str | None = None,
-        timeout: float = TIMEOUT,
     ) -> None:
         self.registry = registry
         self.token = token
-        self.timeout = timeout
 
     def __repr__(self) -> str:
         token = "***" if self.token else None  # never echo the credential
@@ -50,7 +49,6 @@ class SkillHubClient:
         request = SearchRequest(query=query, limit=limit)
         stdout = run(
             request.to_args(registry=self.registry, token=self.token),
-            timeout=self.timeout,
             label=request.label,
         )
         return SearchResult.from_payload(json.loads(stdout))
@@ -82,7 +80,6 @@ class SkillHubClient:
         )
         stdout = run(
             request.to_args(registry=self.registry, token=self.token),
-            timeout=self.timeout,
             label=request.label,
         )
         return InstallResult.from_payload(json.loads(stdout))
@@ -102,7 +99,6 @@ class SkillHubClient:
         request = UninstallRequest(slug=slug, agent=agent, all_targets=all_targets)
         stdout = run(
             request.to_args(registry=self.registry, token=self.token),
-            timeout=self.timeout,
             label=request.label,
         )
         return UninstallResult.from_payload(json.loads(stdout))

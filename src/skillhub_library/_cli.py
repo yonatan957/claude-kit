@@ -1,31 +1,25 @@
 """Locating and invoking the SkillHub CLI."""
 
 import json
-import os
 import shutil
 import subprocess
 from collections.abc import Sequence
 from typing import Any
 
+from .consts import BINARIES, BINARY_ENV_VAR, INSTALL_HINT, REQUEST_TIMEOUT
 from .errors import CLINotFoundError, CLITimeoutError, CommandError
 
-__all__ = ["run", "BINARIES", "TIMEOUT"]
-
-#: Executable names tried in order -- add a fallback here if the CLI is ever
-#: published under another name. ``$SKILLHUB_BIN`` overrides the whole list.
-BINARIES: tuple[str, ...] = ("skillhub",)  # note the comma: a 1-tuple, not a str
-
-TIMEOUT = 120.0
+__all__ = ["run"]
 
 
-def run(args: Sequence[str], *, timeout: float = TIMEOUT, label: str | None = None) -> str:
+def run(args: Sequence[str], *, label: str | None = None) -> str:
     """Run the CLI with ``args`` and return its stdout, or raise.
 
     ``label`` is how a failure names the command it came from. Requests pass
     their own, which is the command and its subject and no flags -- joining
     ``args`` instead would put ``--token`` in every error message.
     """
-    argv = [_binary(), *args]
+    argv = [_get_binary_path(), *args]
     label = label if label is not None else " ".join(args)
     try:
         proc = subprocess.run(
@@ -34,11 +28,11 @@ def run(args: Sequence[str], *, timeout: float = TIMEOUT, label: str | None = No
             text=True,
             encoding="utf-8",
             errors="replace",
-            timeout=timeout,
+            timeout=REQUEST_TIMEOUT,
             stdin=subprocess.DEVNULL,  # keep the CLI non-interactive
         )
     except subprocess.TimeoutExpired:
-        raise CLITimeoutError(f"`{label}` timed out after {timeout}s") from None
+        raise CLITimeoutError(f"`{label}` timed out after {REQUEST_TIMEOUT}s") from None
 
     if proc.returncode != 0:
         raise _failure(label, proc.returncode, proc.stderr, proc.stdout)
@@ -80,14 +74,13 @@ def _is_parsable(text: str) -> bool:
     return isinstance(decoded, dict)
 
 
-def _binary() -> str:
-    """Locate the CLI executable, honouring PATHEXT so Windows shims resolve."""
-    names = [os.environ["SKILLHUB_BIN"]] if os.environ.get("SKILLHUB_BIN") else BINARIES
-    for name in names:
-        found = name if os.path.sep in name else shutil.which(name)
+def _get_binary_path() -> str:
+    """The absolute path to the CLI executable, for handing to ``subprocess``."""
+    for bin in BINARIES:
+        found = shutil.which(bin)
         if found:
             return found
     raise CLINotFoundError(
-        f"SkillHub CLI not found (tried: {', '.join(names)}). Install it with "
-        "`npm install -g @astron-team/skillhub`, or set $SKILLHUB_BIN."
+        f"SkillHub CLI not found (tried: {', '.join(BINARIES)}). Install it with "
+        f"`{INSTALL_HINT}`, or set ${BINARY_ENV_VAR}."
     )
