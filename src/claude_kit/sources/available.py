@@ -4,18 +4,17 @@ from .source import Source
 
 __all__ = ["AVAILABLE_SOURCES", "SourceName", "get_source_names", "find_source_by_name"]
 
-#: The sources every service iterates unless it is handed its own list.
 AVAILABLE_SOURCES: list[Source] = [SkillHubSource()]
 
 
 def get_source_names(sources: list[Source] | None = None) -> list[str]:
-    """The name of every source, in the same precedence order."""
-    sources = AVAILABLE_SOURCES if sources is None else sources
+
+    sources = sources or AVAILABLE_SOURCES
     return [source.name for source in sources]
 
 SourceName = Enum("SourceEnum", get_source_names())
 
 def find_source_by_name(name: str, sources: list[Source] | None = None) -> Source | None:
-    """The source called ``name``, or ``None`` when nothing answers to it."""
-    sources = AVAILABLE_SOURCES if sources is None else sources
-    return next((source for source in sources if source.name == name), None)
+
+    sources = sources or AVAILABLE_SOURCES
+    return [source for source in sources if source.name == name][0] or None
