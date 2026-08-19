@@ -15,7 +15,7 @@ class UninstallService:
     """
 
     def __init__(self, sources: list[Source] | None = None) -> None:
-        self.sources = AVAILABLE_SOURCES if sources is None else sources
+        self.sources = sources or AVAILABLE_SOURCES 
 
     def uninstall(self, component: ClaudeComponent) -> list[ClaudeComponent]:
         """Remove ``component``, and answer with what was removed."""
