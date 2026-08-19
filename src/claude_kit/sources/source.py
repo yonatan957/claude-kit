@@ -9,15 +9,21 @@ class Source(ABC):
     """One place components can be searched, installed and removed.
 
     Every method takes the kind first, because a source may serve some kinds
-    and not others. A source that does not serve a kind answers with an empty
-    list rather than failing -- searching every source at once must not break
-    on the ones that have nothing to say.
+    and not others. A source declares the ones it serves in ``kinds``, and a
+    source that does not serve a kind answers with an empty list rather than
+    failing -- searching every source at once must not break on the ones that
+    have nothing to say.
     """
+
+    kinds: frozenset[ComponentKind] = frozenset()
 
     @property
     @abstractmethod
     def name(self) -> str:
         """How this source is reported to the user, e.g. ``"skillhub"``."""
+
+    def supports(self, kind: ComponentKind) -> bool:
+        return kind in self.kinds
 
     @abstractmethod
     def search(self, kind: ComponentKind, query: str = "") -> list[ClaudeComponent]:

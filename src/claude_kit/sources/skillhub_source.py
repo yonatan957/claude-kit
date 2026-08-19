@@ -8,6 +8,8 @@ __all__ = ["SkillHubSource"]
 
 class SkillHubSource(Source):
 
+    kinds = frozenset({ComponentKind.SKILL})
+
     def __init__(self, client: SkillHubClient | None = None) -> None:
         self.client = client or SkillHubClient()
 
@@ -16,22 +18,16 @@ class SkillHubSource(Source):
         return "skillhub"
 
     def search(self, kind: ComponentKind, query: str = "") -> list[ClaudeComponent]:
-        match kind:
-            case ComponentKind.SKILL:
-                raise NotImplementedError
-            case _:
-                return []
+        if not self.supports(kind):
+            return []
+        raise NotImplementedError
 
     def install(self, kind: ComponentKind, name: str) -> list[ClaudeComponent]:
-        match kind:
-            case ComponentKind.SKILL:
-                raise NotImplementedError
-            case _:
-                return []
+        if not self.supports(kind):
+            return []
+        raise NotImplementedError
 
     def uninstall(self, kind: ComponentKind, name: str) -> list[ClaudeComponent]:
-        match kind:
-            case ComponentKind.SKILL:
-                raise NotImplementedError
-            case _:
-                return []
+        if not self.supports(kind):
+            return []
+        raise NotImplementedError
