@@ -1,6 +1,6 @@
 """The sources components come from, and the interface they all satisfy."""
 
-from .available import AVAILABLE_SOURCES, SourceName, source_by_name, source_names
+from .available import AVAILABLE_SOURCES, SourceName, find_source_by_name, get_source_names
 from .skillhub_source import SkillHubSource
 from .source import Source
 
@@ -9,6 +9,6 @@ __all__ = [
     "SkillHubSource",
     "AVAILABLE_SOURCES",
     "SourceName",
-    "source_names",
-    "source_by_name",
+    "get_source_names",
+    "find_source_by_name",
 ]
