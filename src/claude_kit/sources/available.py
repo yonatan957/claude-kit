@@ -1,9 +1,3 @@
-"""Every source the kit knows about, in precedence order.
-
-Install consults them in this order and stops at the first one that has the
-package, so the order here is the answer to "which source wins".
-"""
-
 from enum import Enum
 from .skillhub_source import SkillHubSource
 from .source import Source

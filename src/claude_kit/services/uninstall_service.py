@@ -1,5 +1,3 @@
-"""``ck uninstall``: straight to the source when we know it."""
-
 from claude_kit.components import ClaudeComponent
 from claude_kit.sources import AVAILABLE_SOURCES, Source, source_by_name
 

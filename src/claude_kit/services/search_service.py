@@ -1,5 +1,3 @@
-"""``ck search``: every source at once."""
-
 from claude_kit.components import ClaudeComponent, ComponentKind
 from claude_kit.sources import AVAILABLE_SOURCES, Source
 

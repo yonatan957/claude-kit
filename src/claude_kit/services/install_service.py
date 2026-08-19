@@ -1,5 +1,3 @@
-"""``ck install``: the first source that has it."""
-
 from claude_kit.components import ClaudeComponent, ComponentKind
 from claude_kit.sources import AVAILABLE_SOURCES, Source
 

@@ -1,5 +1,3 @@
-"""SkillHub as a source. It publishes skills, and nothing else."""
-
 from claude_kit.components import ClaudeComponent, ComponentKind
 from skillhub_library import SkillHubClient
 
@@ -9,10 +7,6 @@ __all__ = ["SkillHubSource"]
 
 
 class SkillHubSource(Source):
-    """Serves :attr:`ComponentKind.SKILL` through the SkillHub CLI.
-
-    The other four kinds are not published here, so they answer empty.
-    """
 
     def __init__(self, client: SkillHubClient | None = None) -> None:
         self.client = client or SkillHubClient()

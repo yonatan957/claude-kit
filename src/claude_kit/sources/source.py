@@ -1,5 +1,3 @@
-"""What every source has to be able to do."""
-
 from abc import ABC, abstractmethod
 
 from claude_kit.components import ClaudeComponent, ComponentKind
