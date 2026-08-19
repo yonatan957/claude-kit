@@ -4,10 +4,9 @@ A source answers in these, so the rest of the kit never has to know whether a
 package arrived from SkillHub, a git registry or somewhere else.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import StrEnum
-
-from skillhub_library.types import JSONObject
+from claude_kit.sources.available import SourceName
 
 __all__ = ["ComponentKind", "ClaudeComponent"]
 
@@ -39,9 +38,8 @@ class ClaudeComponent:
 
     kind: ComponentKind
     name: str
+    source: SourceName
     description: str = ""
-    source: str = ""
     version: str = ""
     popularity: int | None = None
     tag: str = ""
-    raw: JSONObject = field(default_factory=dict)
