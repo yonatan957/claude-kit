@@ -1,7 +1,7 @@
 """One service per command, each driving the sources list."""
 
-from .install_service import install
-from .search_service import search
-from .uninstall_service import uninstall
+from claude_kit.services.install_service import install
+from claude_kit.services.search_service import search
+from claude_kit.services.uninstall_service import uninstall
 
 __all__ = ["search", "install", "uninstall"]

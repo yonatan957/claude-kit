@@ -4,7 +4,7 @@ Everything subclasses :class:`SkillHubError`, so ``except SkillHubError`` keeps
 catching the lot.
 """
 
-from .types import JSONObject, Payload
+from skillhub_library.types import JSONObject, Payload
 
 __all__ = ["SkillHubError", "CLINotFoundError", "CLITimeoutError", "CommandError"]
 

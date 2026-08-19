@@ -6,8 +6,8 @@ import shutil
 import subprocess
 from collections.abc import Sequence
 
-from .errors import CLINotFoundError, CLITimeoutError, CommandError
-from .types import FlagValue, Payload
+from skillhub_library.errors import CLINotFoundError, CLITimeoutError, CommandError
+from skillhub_library.types import FlagValue, Payload
 
 __all__ = ["run", "flags", "BINARIES", "TIMEOUT"]
 

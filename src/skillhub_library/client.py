@@ -2,8 +2,8 @@
 
 from collections.abc import Sequence
 
-from ._cli import TIMEOUT, flags, run
-from .types import (
+from skillhub_library._cli import TIMEOUT, flags, run
+from skillhub_library.types import (
     AgentSpec,
     Directory,
     FlagValue,

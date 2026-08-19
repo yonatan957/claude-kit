@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Self
 
-from .aliases import JSONObject, Payload
+from skillhub_library.types.aliases import JSONObject, Payload
 
 __all__ = ["Skill", "SearchResult"]
 

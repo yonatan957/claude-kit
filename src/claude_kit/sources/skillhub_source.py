@@ -1,7 +1,7 @@
 from claude_kit.components import ClaudeComponent, ComponentKind
 from skillhub_library import SkillHubClient
 
-from .source import Source
+from claude_kit.sources.source import Source
 
 __all__ = ["SkillHubSource"]
 
@@ -10,7 +10,8 @@ class SkillHubSource(Source):
 
     kinds = frozenset({ComponentKind.SKILL})
 
-    def __init__(self, client: SkillHubClient | None = None) -> None:
+    def __init__(self, registry: str, client: SkillHubClient | None = None) -> None:
+        self.registry = registry
         self.client = client or SkillHubClient()
 
     @property

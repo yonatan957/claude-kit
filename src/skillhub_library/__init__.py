@@ -15,10 +15,10 @@ Every command shells out to the CLI with ``--json``. A failure raises
 authority on what is and isn't valid.
 """
 
-from ._cli import run
-from .client import SkillHubClient
-from .errors import CLINotFoundError, CLITimeoutError, CommandError, SkillHubError
-from .types import (
+from skillhub_library._cli import run
+from skillhub_library.client import SkillHubClient
+from skillhub_library.errors import CLINotFoundError, CLITimeoutError, CommandError, SkillHubError
+from skillhub_library.types import (
     AgentSpec,
     Directory,
     FlagValue,

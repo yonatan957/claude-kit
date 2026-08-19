@@ -3,8 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Self
 
-from .aliases import JSONObject, Payload
-from .targets import Target
+from skillhub_library.types.aliases import JSONObject, Payload
+from skillhub_library.types.targets import Target
 
 __all__ = ["InstallResult", "RemoveResult"]
 
