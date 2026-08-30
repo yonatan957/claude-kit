@@ -122,12 +122,13 @@ Everything lives under your Claude configuration directory (`CLAUDE_CONFIG_DIR`,
 
 ```text
 skills/ agents/ mcp/ tools/ plugins/   installed packages
-.claude-kit/
-├── manifest.json    what is installed, and every file it owns
-├── status.json      the most recent version check
+.claude-kit
+├── installed.db        knowledge about which compoents are instaled
+├── state.json        
 ├── registry/        the local copy of the main registry
 └── journal/         in-flight transaction; empty in steady state
 ```
+
 
 ## Configuration
 

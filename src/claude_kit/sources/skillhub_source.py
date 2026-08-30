@@ -10,7 +10,7 @@ class SkillHubSource(Source):
 
     kinds = frozenset({ComponentKind.SKILL})
 
-    def __init__(self, registry: str, client: SkillHubClient | None = None) -> None:
+    def __init__(self, registry: str | None = None, client: SkillHubClient | None = None) -> None:
         self.registry = registry
         self.client = client or SkillHubClient()
 
