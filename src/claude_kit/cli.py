@@ -1,5 +1,6 @@
 """``ck``: the command line over claude-kit's services."""
 
+from importlib import metadata
 from pathlib import Path
 from typing import Annotated
 
@@ -11,17 +12,26 @@ from claude_kit.helpers import KitNotFound, ToolStatus
 
 KINDS = "skill, agent, mcp, tool or plugin"
 
-app = typer.Typer(
-    name="ck",
-    help="Discover, install and remove Claude Code add-ons.",
-    no_args_is_help=True,
-)
+app = typer.Typer(name="ck", no_args_is_help=True, add_completion=False)
+
 
 Kind = Annotated[ComponentKind, typer.Argument(help=f"Which kind: {KINDS}.")]
 Home = Annotated[
     Path | None,
     typer.Option(help="Kit home. Defaults to $CLAUDE_KIT_HOME, else ~/.claude-kit."),
 ]
+
+
+@app.callback(invoke_without_command=True)
+def main(
+    version: Annotated[
+        bool,
+        typer.Option("--version", help="Print the claude-kit version and exit."),
+    ] = False,
+) -> None:
+    """Discover, install and remove Claude Code add-ons."""
+    if version:
+        _print_version()
 
 
 @app.command()
@@ -132,6 +142,15 @@ def status(home: Home = None) -> None:
         behind = f" ({version.behind_by} behind)" if version.behind_by else ""
         installed = version.installed or "-"
         typer.echo(f"  {name:20} {installed:12} -> {version.available or '-'}{behind}")
+
+
+def _print_version() -> None:
+    try:
+        installed = metadata.version("claude-kit")
+    except metadata.PackageNotFoundError:
+        installed = "not installed"
+    typer.echo(f"claude-kit {installed}")
+    raise typer.Exit()
 
 
 def _run(service, *arguments):
