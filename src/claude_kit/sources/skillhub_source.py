@@ -54,7 +54,7 @@ class SkillHubSource(Source):
             ClaudeComponent(
                 kind=kind, name=name, source=self.name, tag=target.namespace
             )
-            for target in removed.removed
+            for target in removed.removed_targets
             if target.existed is not False
         ]
 

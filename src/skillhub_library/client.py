@@ -1,17 +1,16 @@
 """The entry point: one client that searches the registry and manages installs."""
 
-from collections.abc import Sequence
+import json
 
-from skillhub_library._cli import TIMEOUT, flags, run
+from skillhub_library._cli import run
+from skillhub_library.dtos import InstallRequest, SearchRequest, UninstallRequest
 from skillhub_library.types import (
     AgentSpec,
     Directory,
-    FlagValue,
     InstallResult,
-    Payload,
-    RemoveResult,
     Scope,
     SearchResult,
+    UninstallResult,
 )
 
 __all__ = ["SkillHubClient"]
@@ -23,8 +22,13 @@ class SkillHubClient:
         client = SkillHubClient(token="...")
         client.install("pdf-parser", agent="claude-code", scope="user")
 
-    ``registry``, ``token`` and ``timeout`` are settled once here so the
-    commands themselves only take what varies between calls.
+    ``registry`` and ``token`` are settled once here so the commands
+    themselves only take what varies between calls. The timeout is not a
+    knob: :data:`~.consts.REQUEST_TIMEOUT` bounds every request. Each command
+    builds the matching request from :mod:`skillhub_library.dtos`, runs it, and
+    hands the decoded answer to the result type: the request owns the argv,
+    :func:`~._cli.run` owns the process, the client turns stdout into JSON, and
+    the result owns the shape it reads there.
     """
 
     def __init__(
@@ -32,11 +36,9 @@ class SkillHubClient:
         *,
         registry: str | None = None,
         token: str | None = None,
-        timeout: float = TIMEOUT,
     ) -> None:
         self.registry = registry
         self.token = token
-        self.timeout = timeout
 
     def __repr__(self) -> str:
         token = "***" if self.token else None  # never echo the credential
@@ -44,15 +46,18 @@ class SkillHubClient:
 
     def search(self, query: str = "", *, limit: int | None = None) -> SearchResult:
         """Search published skills. An empty ``query`` lists everything."""
-        search_result = self._run(["search", query], limit=limit)
-        return SearchResult.from_payload(search_result)
+        request = SearchRequest(query=query, limit=limit)
+        stdout = run(
+            request.to_args(registry=self.registry, token=self.token),
+            label=request.label,
+        )
+        return SearchResult.from_payload(json.loads(stdout))
 
     def install(
         self,
-        coordinate: str,
+        slug: str,
         *,
         namespace: str | None = None,
-        version: str | None = None,
         agent: AgentSpec | None = None,
         scope: Scope | None = None,
         directory: Directory | None = None,
@@ -60,41 +65,40 @@ class SkillHubClient:
     ) -> InstallResult:
         """Install a skill.
 
-        ``coordinate`` is ``slug``, ``team/slug``, ``@team/slug`` or ``team--slug``.
-        ``agent`` may be one profile name or a list of them. ``directory`` installs
-        to a custom path and cannot be combined with ``scope`` or ``agent``.
+        ``slug`` and ``namespace`` are a search hit's own two fields; leaving
+        ``namespace`` out installs from the CLI's default, ``global``. ``agent``
+        may be one profile name or a list of them. ``directory`` installs to a
+        custom path and cannot be combined with ``scope`` or ``agent``.
         """
-        payload = self._run(
-            ["install", coordinate],
+        request = InstallRequest(
+            slug=slug,
             namespace=namespace,
-            version=version,
-            scope=scope,
             agent=agent,
-            dir=directory,
+            scope=scope,
+            directory=directory,
             force=force,
         )
-        return InstallResult.from_payload(payload)
+        stdout = run(
+            request.to_args(registry=self.registry, token=self.token),
+            label=request.label,
+        )
+        return InstallResult.from_payload(json.loads(stdout))
 
     def uninstall(
         self,
-        coordinate: str,
+        slug: str,
         *,
-        namespace: str | None = None,
         agent: AgentSpec | None = None,
         all_targets: bool = False,
-    ) -> RemoveResult:
+    ) -> UninstallResult:
         """Remove an installed skill (the CLI's ``remove``).
 
-        A bare slug removes matching installations across namespaces; pass a
-        namespaced coordinate or ``namespace=`` to narrow it. ``all_targets``
+        The slug matches installations across namespaces; ``all_targets``
         removes every target without prompting.
         """
-        payload = self._run(
-            ["remove", coordinate], namespace=namespace, agent=agent, all=all_targets
+        request = UninstallRequest(slug=slug, agent=agent, all_targets=all_targets)
+        stdout = run(
+            request.to_args(registry=self.registry, token=self.token),
+            label=request.label,
         )
-        return RemoveResult.from_payload(payload)
-
-    def _run(self, command: Sequence[str], **options: FlagValue) -> Payload:
-        """Run ``command`` with this client's registry, token and timeout."""
-        args = [*command, *flags(registry=self.registry, token=self.token, **options)]
-        return run(args, timeout=self.timeout)
+        return UninstallResult.from_payload(json.loads(stdout))

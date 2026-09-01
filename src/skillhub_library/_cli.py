@@ -1,40 +1,26 @@
-"""Locating, invoking, and unwrapping the SkillHub CLI."""
+"""Locating and invoking the SkillHub CLI."""
 
 import json
-import os
 import shutil
 import subprocess
 from collections.abc import Sequence
+from typing import Any
 
+from skillhub_library.consts import BINARIES, BINARY_ENV_VAR, INSTALL_HINT, REQUEST_TIMEOUT
 from skillhub_library.errors import CLINotFoundError, CLITimeoutError, CommandError
-from skillhub_library.types import FlagValue, Payload
 
-__all__ = ["run", "flags", "BINARIES", "TIMEOUT"]
-
-#: Executable names tried in order -- add a fallback here if the CLI is ever
-#: published under another name. ``$SKILLHUB_BIN`` overrides the whole list.
-BINARIES: tuple[str, ...] = ("skillhub",)  # note the comma: a 1-tuple, not a str
-
-TIMEOUT = 120.0
+__all__ = ["run"]
 
 
-class _Unparsed:
-    """Sentinel: the CLI answered with something that isn't JSON."""
+def run(args: Sequence[str], *, label: str | None = None) -> str:
+    """Run the CLI with ``args`` and return its stdout, or raise.
 
-
-_UNPARSED = _Unparsed()
-
-
-def run(args: Sequence[str], *, timeout: float = TIMEOUT) -> Payload:
-    """Run the CLI with ``args`` and return its stdout parsed as JSON.
-
-    Output that isn't JSON is returned as a plain string. Every command answers
-    with an ``{"ok": ...}`` envelope -- successes on stdout, failures on stderr
-    -- and ``ok`` is checked before the exit code, which is what surfaces the
-    CLI's own message instead of a raw JSON blob.
+    ``label`` is how a failure names the command it came from. Requests pass
+    their own, which is the command and its subject and no flags -- joining
+    ``args`` instead would put ``--token`` in every error message.
     """
-    argv = [_binary(), *args]
-    label = " ".join(args)
+    argv = [_get_binary_path(), *args]
+    label = label if label is not None else " ".join(args)
     try:
         proc = subprocess.run(
             argv,
@@ -42,69 +28,59 @@ def run(args: Sequence[str], *, timeout: float = TIMEOUT) -> Payload:
             text=True,
             encoding="utf-8",
             errors="replace",
-            timeout=timeout,
+            timeout=REQUEST_TIMEOUT,
             stdin=subprocess.DEVNULL,  # keep the CLI non-interactive
         )
     except subprocess.TimeoutExpired:
-        raise CLITimeoutError(f"`{label}` timed out after {timeout}s") from None
+        raise CLITimeoutError(f"`{label}` timed out after {REQUEST_TIMEOUT}s") from None
 
-    payload = _json(proc.stdout)
-    # Successes answer on stdout, failure envelopes on stderr.
-    envelope = payload if isinstance(payload, dict) else _json(proc.stderr)
-
-    if isinstance(envelope, dict) and envelope.get("ok") is False:
-        raise CommandError(
-            label,
-            message=envelope.get("message") or "no message",
-            returncode=proc.returncode,
-            details=envelope.get("details"),
-            raw=envelope,
-        )
     if proc.returncode != 0:
-        raise CommandError(
-            label,
-            message=proc.stderr.strip() or proc.stdout.strip() or "no output",
-            returncode=proc.returncode,
-        )
-    return proc.stdout.strip() if payload is _UNPARSED else payload
+        raise _failure(label, proc.returncode, proc.stderr, proc.stdout)
+    return proc.stdout.strip()
 
 
-def _json(text: str) -> Payload | _Unparsed:
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        return _UNPARSED
+def _failure(label: str, code: int, stderr: str, stdout: str) -> CommandError:
+    """The richest error the CLI's own output allows.
 
-
-def flags(**kwargs: FlagValue) -> list[str]:
-    """Build CLI flags: ``None``/``False`` are skipped, lists repeat the flag.
-
-    ``--json`` is always present: it guarantees the envelope and keeps the CLI
-    non-interactive (it suppresses ``install``'s scope prompt).
+    Failure envelopes come back on stderr; preferring the message inside one is
+    what surfaces the CLI's own words instead of a raw JSON blob.
     """
-    args = ["--json"]
-    for name, value in kwargs.items():
-        flag = "--" + name
-        if value is None or value is False:
+    for text in (stderr, stdout):
+        if not _is_parsable(text):
             continue
-        if value is True:
-            args.append(flag)
-        elif isinstance(value, (list, tuple)):
-            for item in value:
-                args += [flag, str(item)]
-        else:
-            args += [flag, str(value)]
-    return args
+        reported: dict[str, Any] = json.loads(text)
+        if reported.get("ok") is False:
+            return CommandError(
+                label,
+                message=reported.get("message") or "no message",
+                returncode=code,
+                details=reported.get("details"),
+                raw=reported,
+            )
+        break
+    return CommandError(
+        label,
+        message=stderr.strip() or stdout.strip() or "no output",
+        returncode=code,
+    )
 
 
-def _binary() -> str:
-    """Locate the CLI executable, honouring PATHEXT so Windows shims resolve."""
-    names = [os.environ["SKILLHUB_BIN"]] if os.environ.get("SKILLHUB_BIN") else BINARIES
-    for name in names:
-        found = name if os.path.sep in name else shutil.which(name)
+def _is_parsable(text: str) -> bool:
+    """Whether ``text`` decodes as a JSON object -- not merely as JSON."""
+    try:
+        decoded = json.loads(text)
+    except json.JSONDecodeError:
+        return False
+    return isinstance(decoded, dict)
+
+
+def _get_binary_path() -> str:
+    """The absolute path to the CLI executable, for handing to ``subprocess``."""
+    for bin in BINARIES:
+        found = shutil.which(bin)
         if found:
             return found
     raise CLINotFoundError(
-        f"SkillHub CLI not found (tried: {', '.join(names)}). Install it with "
-        "`npm install -g @astron-team/skillhub`, or set $SKILLHUB_BIN."
+        f"SkillHub CLI not found (tried: {', '.join(BINARIES)}). Install it with "
+        f"`{INSTALL_HINT}`, or set ${BINARY_ENV_VAR}."
     )

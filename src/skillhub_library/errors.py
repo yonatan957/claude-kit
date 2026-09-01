@@ -4,9 +4,15 @@ Everything subclasses :class:`SkillHubError`, so ``except SkillHubError`` keeps
 catching the lot.
 """
 
-from skillhub_library.types import JSONObject, Payload
+from typing import Any
 
-__all__ = ["SkillHubError", "CLINotFoundError", "CLITimeoutError", "CommandError"]
+__all__ = [
+    "SkillHubError",
+    "CLINotFoundError",
+    "CLITimeoutError",
+    "CommandError",
+    "MalformedAnswerError",
+]
 
 
 class SkillHubError(RuntimeError):
@@ -30,8 +36,8 @@ class CommandError(SkillHubError):
         *,
         message: str,
         returncode: int | None = None,
-        details: JSONObject | None = None,
-        raw: Payload = None,
+        details: dict[str, Any] | None = None,
+        raw: Any = None,
     ) -> None:
         self.command = command
         self.message = message
@@ -40,3 +46,12 @@ class CommandError(SkillHubError):
         self.raw = raw
         hint = self.details.get("next")
         super().__init__(f"{message} ({hint})" if hint else message)
+
+
+class MalformedAnswerError(SkillHubError):
+    """The CLI answered, but without a field this library needs.
+
+    Raised at the point of parsing rather than defaulted away, so a payload
+    that changed shape is reported where it broke instead of surfacing later
+    as an empty slug handed back to the CLI.
+    """
