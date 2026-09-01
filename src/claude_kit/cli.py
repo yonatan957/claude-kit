@@ -8,7 +8,7 @@ import typer
 
 from claude_kit import services
 from claude_kit.components import ClaudeComponent, ComponentKind, InstalledComponent
-from claude_kit.helpers import KitNotFound, ToolStatus
+from claude_kit.helpers import KitNotFound, SourceError, ToolStatus
 
 KINDS = "skill, agent, mcp, tool or plugin"
 
@@ -123,7 +123,7 @@ def list_installed(
     home: Home = None,
 ) -> None:
     """Show every component the kit has installed."""
-    installed = _run(services.get_installed_components, kind, home)
+    installed = services.get_installed_components(kind, home)
     if not installed:
         typer.echo("nothing installed")
         return
@@ -134,7 +134,7 @@ def list_installed(
 @app.command()
 def status(home: Home = None) -> None:
     """Show the last update check the kit cached."""
-    state = _run(services.get_state, home)
+    state = services.get_state(home)
     typer.echo(state.message or "no message")
     if state.checked_at:
         typer.echo(f"checked at {state.checked_at}")
@@ -151,15 +151,6 @@ def _print_version() -> None:
         installed = "not installed"
     typer.echo(f"claude-kit {installed}")
     raise typer.Exit()
-
-
-def _run(service, *arguments):
-    """Call a service that needs an initialised home, reporting when there is none."""
-    try:
-        return service(*arguments)
-    except KitNotFound as absent:
-        typer.secho(str(absent), fg=typer.colors.RED, err=True)
-        raise typer.Exit(1) from None
 
 
 def _print_components(components: list[ClaudeComponent]) -> None:
@@ -179,5 +170,14 @@ def _print_installed_component(installed: InstalledComponent) -> None:
     )
 
 
+def run() -> None:
+    """The entry point: a failure a user can act on is one line, never a traceback."""
+    try:
+        app()
+    except (KitNotFound, SourceError) as failure:
+        typer.secho(str(failure), fg=typer.colors.RED, err=True)
+        raise SystemExit(1) from None
+
+
 if __name__ == "__main__":
-    app()
+    run()

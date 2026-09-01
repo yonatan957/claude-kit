@@ -10,7 +10,7 @@ from claude_kit.helpers.consts import (
     STATE_FILE_NAME,
     TIMEOUT,
 )
-from claude_kit.helpers.errors import KitNotFound
+from claude_kit.helpers.errors import KitNotFound, SourceError
 from claude_kit.helpers.system import (
     CommandResult,
     Tool,
@@ -24,6 +24,7 @@ from claude_kit.helpers.system import (
 
 __all__ = [
     "KitNotFound",
+    "SourceError",
     "CLAUDE_KIT_HOME",
     "DATABASE_FILE_NAME",
     "STATE_FILE_NAME",

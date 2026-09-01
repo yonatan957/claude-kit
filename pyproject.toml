@@ -12,7 +12,7 @@ license = "Apache-2.0"
 dependencies = ["typer>=0.12"]
 
 [project.scripts]
-ck = "claude_kit.cli:app"
+ck = "claude_kit.cli:run"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/claude_kit", "src/skillhub_library"]

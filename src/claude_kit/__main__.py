@@ -1,5 +1,5 @@
 """``python -m claude_kit``."""
 
-from claude_kit.cli import app
+from claude_kit.cli import run
 
-app()
+run()
