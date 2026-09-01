@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from claude_kit.helpers.consts import CHECK_INTERVAL_HOURS
+
 __all__ = ["VersionStatus", "KitState", "read_state", "write_state"]
 
 
@@ -21,7 +23,7 @@ class VersionStatus:
 class KitState:
     notice_version: int = 1
     checked_at: str = ""
-    check_interval_hours: int = 24
+    check_interval_hours: int = CHECK_INTERVAL_HOURS
     message: str = ""
     versions: dict[str, VersionStatus] = field(default_factory=dict)
     announced: dict[str, str] = field(default_factory=dict)
