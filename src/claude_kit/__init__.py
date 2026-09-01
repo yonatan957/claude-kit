@@ -5,6 +5,8 @@ from claude_kit.helpers import (
     CLAUDE_KIT_HOME,
     DATABASE_FILE_NAME,
     STATE_FILE_NAME,
+    ExitCode,
+    KitError,
     KitNotFound,
 )
 from claude_kit.services import (
@@ -32,6 +34,8 @@ __all__ = [
     "search",
     "install",
     "uninstall",
+    "ExitCode",
+    "KitError",
     "KitNotFound",
     "get_installed_components",
     "get_state",

@@ -9,7 +9,10 @@ __all__ = ["get_state"]
 
 
 def get_state(home: Path | None = None) -> KitState:
+    """The last check, or ``KitNotFound`` -- an empty answer would read as "nothing
+    is behind", which is a different claim from "nothing has been checked"."""
     home = home or CLAUDE_KIT_HOME
-    if not home.exists():
+    state = home / STATE_FILE_NAME
+    if not state.exists():
         raise KitNotFound(home)
-    return read_state(home / STATE_FILE_NAME)
+    return read_state(state)

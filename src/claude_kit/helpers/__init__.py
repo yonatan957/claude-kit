@@ -10,7 +10,18 @@ from claude_kit.helpers.consts import (
     STATE_FILE_NAME,
     TIMEOUT,
 )
-from claude_kit.helpers.errors import KitNotFound, SourceError
+from claude_kit.helpers.errors import (
+    Conflict,
+    ExitCode,
+    KitError,
+    KitNotFound,
+    NotFound,
+    Refused,
+    RolledBack,
+    SourceError,
+    SourceUnreachable,
+    UsageError,
+)
 from claude_kit.helpers.system import (
     CommandResult,
     Tool,
@@ -23,8 +34,16 @@ from claude_kit.helpers.system import (
 )
 
 __all__ = [
+    "ExitCode",
+    "KitError",
+    "UsageError",
+    "NotFound",
     "KitNotFound",
     "SourceError",
+    "SourceUnreachable",
+    "Refused",
+    "Conflict",
+    "RolledBack",
     "CLAUDE_KIT_HOME",
     "DATABASE_FILE_NAME",
     "STATE_FILE_NAME",

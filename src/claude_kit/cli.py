@@ -8,7 +8,7 @@ import typer
 
 from claude_kit import services
 from claude_kit.components import ClaudeComponent, ComponentKind, InstalledComponent
-from claude_kit.helpers import KitNotFound, SourceError, ToolStatus
+from claude_kit.helpers import ExitCode, KitError, ToolStatus
 
 KINDS = "skill, agent, mcp, tool or plugin"
 
@@ -54,10 +54,16 @@ def init(
         typer.secho(
             f"{report.tool.label}: installed at {report.path}", fg=typer.colors.GREEN
         )
-    else:
+    elif result.attempted_install:
         typer.secho(
             f"{report.tool.label}: missing -- {report.error}",
             fg=typer.colors.RED,
+            err=True,
+        )
+    else:
+        typer.secho(
+            f"{report.tool.label}: missing -- skipped; `ck init` installs it",
+            fg=typer.colors.YELLOW,
             err=True,
         )
 
@@ -69,7 +75,7 @@ def init(
     )
 
     if not result.ok:
-        raise typer.Exit(1)
+        raise typer.Exit(ExitCode.FAILURE)
 
 
 @app.command()
@@ -94,7 +100,7 @@ def install(
     installed = services.install(kind, name)
     if not installed:
         typer.secho(f"no source had {kind} {name!r}", fg=typer.colors.RED, err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(ExitCode.NOT_FOUND)
     _print_components(installed)
 
 
@@ -110,7 +116,7 @@ def uninstall(
         typer.secho(
             f"{kind} {name!r} was not installed", fg=typer.colors.YELLOW, err=True
         )
-        raise typer.Exit(1)
+        raise typer.Exit(ExitCode.NOT_FOUND)
     _print_components(removed)
 
 
@@ -171,12 +177,17 @@ def _print_installed_component(installed: InstalledComponent) -> None:
 
 
 def run() -> None:
-    """The entry point: a failure a user can act on is one line, never a traceback."""
+    """The entry point: a failure a user can act on is one line, never a traceback.
+
+    The code comes off the error, so ``ck`` is scriptable: 3 is nothing by that
+    name, 4 is a source that could not be asked, and 1 stays reserved for the
+    failures nobody anticipated.
+    """
     try:
         app()
-    except (KitNotFound, SourceError) as failure:
+    except KitError as failure:
         typer.secho(str(failure), fg=typer.colors.RED, err=True)
-        raise SystemExit(1) from None
+        raise SystemExit(failure.exit_code) from None
 
 
 if __name__ == "__main__":

@@ -31,10 +31,12 @@ class InitResult:
     created_home: bool
     created_state: bool
     claude_code: ToolReport
+    attempted_install: bool
 
     @property
     def ok(self) -> bool:
-        return self.claude_code.ok
+        """A step the caller asked us to skip is not a step that failed."""
+        return self.claude_code.ok or not self.attempted_install
 
 
 def init(
@@ -67,4 +69,5 @@ def init(
         created_home=created_home,
         created_state=created_state,
         claude_code=claude_code,
+        attempted_install=install_missing,
     )
