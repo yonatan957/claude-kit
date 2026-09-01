@@ -3,13 +3,16 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "skillhub-library"
+name = "claude-kit"
 version = "0.1.0"
-description = "A small Python wrapper around the SkillHub CLI (skillhub)."
+description = "One uniform way to discover, install and remove Claude Code add-ons."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
-dependencies = []
+dependencies = ["typer>=0.12"]
+
+[project.scripts]
+ck = "claude_kit.cli:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/skillhub_library"]
+packages = ["src/claude_kit", "src/skillhub_library"]
