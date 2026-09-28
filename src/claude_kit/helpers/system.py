@@ -49,7 +49,6 @@ class Tool:
 
 
 class ToolStatus(StrEnum):
-    """``PRESENT`` was already there; ``INSTALLED`` is one we just put there."""
 
     PRESENT = "present"
     INSTALLED = "installed"
@@ -69,7 +68,6 @@ class ToolReport:
 
 
 def find_binary(name: str) -> str:
-    """The executable's full path, or ``""``. Honours PATHEXT, so npm shims resolve."""
     return shutil.which(name) or ""
 
 
@@ -103,7 +101,6 @@ def run(command: Sequence[str], timeout: float = TIMEOUT) -> CommandResult:
 
 
 def ensure_tool(tool: Tool, install: bool = True) -> ToolReport:
-    """Report on ``tool``, installing it first if it is absent."""
     found = find_binary(tool.binary)
     if found:
         return ToolReport(tool, ToolStatus.PRESENT, path=found)

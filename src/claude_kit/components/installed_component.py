@@ -17,13 +17,6 @@ _NO_KEYS: Mapping[str, bool] = MappingProxyType({})
 
 
 class ConfigStatus(StrEnum):
-    """How far a component's configuration got.
-
-    ``NONE`` is the answer for a package that asks nothing, which is most of
-    them -- distinct from ``PENDING``, which means it asked and we have not
-    finished answering.
-    """
-
     NONE = "none"
     PENDING = "pending"
     DONE = "done"
@@ -39,7 +32,6 @@ class ComponentConfig:
 
 @dataclass(frozen=True)
 class InstalledComponent:
-
     component: ClaudeComponent
     installed_at: str
     installed_hash: str = ""

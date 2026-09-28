@@ -177,12 +177,6 @@ def _print_installed_component(installed: InstalledComponent) -> None:
 
 
 def run() -> None:
-    """The entry point: a failure a user can act on is one line, never a traceback.
-
-    The code comes off the error, so ``ck`` is scriptable: 3 is nothing by that
-    name, 4 is a source that could not be asked, and 1 stays reserved for the
-    failures nobody anticipated.
-    """
     try:
         app()
     except KitError as failure:
