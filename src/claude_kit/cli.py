@@ -94,10 +94,12 @@ def search(
 
 @app.command()
 def install(
-    kind: Kind, name: Annotated[str, typer.Argument(help="What to install.")]
+    kind: Kind,
+    name: Annotated[str, typer.Argument(help="What to install.")],
+    home: Home = None,
 ) -> None:
     """Install a skill, agent, mcp, tool or plugin from the first source that has it."""
-    installed = services.install(kind, name)
+    installed = services.install(kind, name, home=home)
     if not installed:
         typer.secho(f"no source had {kind} {name!r}", fg=typer.colors.RED, err=True)
         raise typer.Exit(ExitCode.NOT_FOUND)
@@ -109,9 +111,12 @@ def uninstall(
     kind: Kind,
     name: Annotated[str, typer.Argument(help="What to remove.")],
     source: Annotated[str, typer.Option(help="Only look in this source.")] = "",
+    home: Home = None,
 ) -> None:
     """Remove an installed skill, agent, mcp, tool or plugin."""
-    removed = services.uninstall(ClaudeComponent(kind=kind, name=name, source=source))
+    removed = services.uninstall(
+        ClaudeComponent(kind=kind, name=name, source=source), home=home
+    )
     if not removed:
         typer.secho(
             f"{kind} {name!r} was not installed", fg=typer.colors.YELLOW, err=True

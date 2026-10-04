@@ -55,20 +55,42 @@ def test_search_prints_what_a_source_answered(sources):
     assert "code-reviewer" in result.stdout
 
 
-def test_installing_something_no_source_has_is_not_found(sources):
-    result = runner.invoke(cli.app, ["install", "skill", "ghost"])
+def test_installing_something_no_source_has_is_not_found(sources, kit_home):
+    result = runner.invoke(
+        cli.app, ["install", "skill", "ghost", "--home", str(kit_home)]
+    )
     assert result.exit_code == ExitCode.NOT_FOUND
 
 
-def test_uninstalling_something_that_is_not_there_is_not_found(sources):
-    result = runner.invoke(cli.app, ["uninstall", "skill", "ghost"])
+def test_uninstalling_something_that_is_not_there_is_not_found(sources, kit_home):
+    result = runner.invoke(
+        cli.app, ["uninstall", "skill", "ghost", "--home", str(kit_home)]
+    )
     assert result.exit_code == ExitCode.NOT_FOUND
 
 
-def test_install_reports_the_source_it_used(sources):
-    result = runner.invoke(cli.app, ["install", "skill", "code-reviewer"])
+def test_install_reports_the_source_it_used(sources, kit_home):
+    result = runner.invoke(
+        cli.app, ["install", "skill", "code-reviewer", "--home", str(kit_home)]
+    )
     assert result.exit_code == ExitCode.OK
     assert "skillhub" in result.stdout
+
+
+def test_list_shows_an_install_until_it_is_uninstalled(sources, kit_home):
+    home = ["--home", str(kit_home)]
+    runner.invoke(cli.app, ["install", "skill", "code-reviewer", *home])
+    assert "code-reviewer" in runner.invoke(cli.app, ["list", *home]).stdout
+
+    runner.invoke(cli.app, ["uninstall", "skill", "code-reviewer", *home])
+    assert "nothing installed" in runner.invoke(cli.app, ["list", *home]).stdout
+
+
+def test_installing_twice_is_a_conflict(sources, kit_home):
+    install = ["install", "skill", "code-reviewer", "--home", str(kit_home)]
+    runner.invoke(cli.app, install)
+    result = runner.invoke(cli.app, install)
+    assert isinstance(result.exception, Conflict)
 
 
 def test_list_without_a_kit_exits_not_found(tmp_path):

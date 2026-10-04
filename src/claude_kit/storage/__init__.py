@@ -4,6 +4,7 @@ from claude_kit.storage.database import (
     connect,
     ensure_schema,
     get_schema_version,
+    open_kit_database,
 )
 from claude_kit.storage.reader import (
     find_components_by_name,
@@ -22,6 +23,7 @@ __all__ = [
     "SCHEMA_VERSION",
     "SCHEMA_STATEMENTS",
     "connect",
+    "open_kit_database",
     "ensure_schema",
     "get_schema_version",
     "get_installed_components",

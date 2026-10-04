@@ -8,6 +8,7 @@ from claude_kit.helpers import (
     CLAUDE_KIT_HOME,
     DATABASE_FILE_NAME,
     STATE_FILE_NAME,
+    Conflict,
     ExitCode,
     KitNotFound,
     SourceUnreachable,
@@ -64,52 +65,103 @@ def test_search_still_propagates_an_unreachable_source_today():
         services.search(ComponentKind.SKILL, "", [dead, alive])
 
 
-def test_install_takes_the_first_source_that_has_it():
+def test_install_takes_the_first_source_that_has_it(kit_home):
     genie = FakeSource("genie", [REVIEWER])
     skillhub = FakeSource("skillhub", [REVIEWER])
-    installed = services.install(ComponentKind.SKILL, "code-reviewer", [genie, skillhub])
+    installed = services.install(
+        ComponentKind.SKILL, "code-reviewer", [genie, skillhub], kit_home
+    )
     assert [one.source for one in installed] == ["genie"]
     assert skillhub.installed == []
 
 
-def test_install_falls_through_to_the_next_source():
+def test_install_falls_through_to_the_next_source(kit_home):
     genie = FakeSource("genie", [])
     skillhub = FakeSource("skillhub", [FORMATTER])
-    installed = services.install(ComponentKind.SKILL, "formatter", [genie, skillhub])
+    installed = services.install(
+        ComponentKind.SKILL, "formatter", [genie, skillhub], kit_home
+    )
     assert [one.source for one in installed] == ["skillhub"]
     assert genie.installed == [(ComponentKind.SKILL, "formatter")]
 
 
-def test_install_answers_empty_when_no_source_has_it():
+def test_install_answers_empty_when_no_source_has_it(kit_home):
     sources = [FakeSource("genie", []), FakeSource("skillhub", [])]
-    assert services.install(ComponentKind.SKILL, "ghost", sources) == []
+    assert services.install(ComponentKind.SKILL, "ghost", sources, kit_home) == []
+    assert services.get_installed_components(home=kit_home) == []
 
 
-def test_uninstall_asks_only_the_named_source():
+def test_install_records_what_it_installed(kit_home):
+    genie = FakeSource("genie", [REVIEWER])
+    services.install(ComponentKind.SKILL, "code-reviewer", [genie], kit_home)
+    recorded = services.get_installed_components(home=kit_home)
+    assert [(one.component.name, one.component.source) for one in recorded] == [
+        ("code-reviewer", "genie")
+    ]
+    assert recorded[0].installed_at
+
+
+def test_installing_the_same_thing_twice_is_a_conflict(kit_home):
+    genie = FakeSource("genie", [REVIEWER])
+    services.install(ComponentKind.SKILL, "code-reviewer", [genie], kit_home)
+    with pytest.raises(Conflict) as raised:
+        services.install(ComponentKind.SKILL, "code-reviewer", [genie], kit_home)
+    assert raised.value.exit_code is ExitCode.CONFLICT
+    assert len(genie.installed) == 1
+    assert len(services.get_installed_components(home=kit_home)) == 1
+
+
+def test_install_without_a_kit_asks_no_source(tmp_path):
+    genie = FakeSource("genie", [REVIEWER])
+    with pytest.raises(KitNotFound):
+        services.install(
+            ComponentKind.SKILL, "code-reviewer", [genie], tmp_path / "absent"
+        )
+    assert genie.installed == []
+
+
+def test_uninstall_asks_only_the_named_source(kit_home):
     genie = FakeSource("genie", [REVIEWER])
     skillhub = FakeSource("skillhub", [REVIEWER])
     asked = ClaudeComponent(
         kind=ComponentKind.SKILL, name="code-reviewer", source="skillhub"
     )
-    removed = services.uninstall(asked, [genie, skillhub])
+    removed = services.uninstall(asked, [genie, skillhub], kit_home)
     assert [one.source for one in removed] == ["skillhub"]
     assert genie.uninstalled == []
 
 
-def test_uninstall_without_a_source_walks_precedence():
+def test_uninstall_without_a_source_walks_precedence(kit_home):
     genie = FakeSource("genie", [])
     skillhub = FakeSource("skillhub", [REVIEWER])
     asked = ClaudeComponent(kind=ComponentKind.SKILL, name="code-reviewer", source="")
-    removed = services.uninstall(asked, [genie, skillhub])
+    removed = services.uninstall(asked, [genie, skillhub], kit_home)
     assert [one.source for one in removed] == ["skillhub"]
 
 
-def test_uninstall_from_an_unknown_source_is_a_usage_error():
+def test_uninstall_forgets_what_install_recorded(kit_home):
+    genie = FakeSource("genie", [REVIEWER, FORMATTER])
+    services.install(ComponentKind.SKILL, "code-reviewer", [genie], kit_home)
+    services.install(ComponentKind.SKILL, "formatter", [genie], kit_home)
+    asked = ClaudeComponent(kind=ComponentKind.SKILL, name="code-reviewer", source="")
+    services.uninstall(asked, [genie], kit_home)
+    left = services.get_installed_components(home=kit_home)
+    assert [one.component.name for one in left] == ["formatter"]
+
+
+def test_uninstall_without_a_kit_asks_no_source(tmp_path):
+    genie = FakeSource("genie", [REVIEWER])
+    with pytest.raises(KitNotFound):
+        services.uninstall(REVIEWER, [genie], tmp_path / "absent")
+    assert genie.uninstalled == []
+
+
+def test_uninstall_from_an_unknown_source_is_a_usage_error(kit_home):
     asked = ClaudeComponent(
         kind=ComponentKind.SKILL, name="code-reviewer", source="nowhere"
     )
     with pytest.raises(UsageError) as raised:
-        services.uninstall(asked, [FakeSource("genie", [REVIEWER])])
+        services.uninstall(asked, [FakeSource("genie", [REVIEWER])], kit_home)
     assert raised.value.exit_code is ExitCode.USAGE
 
 
