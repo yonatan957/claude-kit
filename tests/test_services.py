@@ -165,6 +165,41 @@ def test_uninstall_from_an_unknown_source_is_a_usage_error(kit_home):
     assert raised.value.exit_code is ExitCode.USAGE
 
 
+def test_recommend_installs_the_skill_when_it_is_absent(kit_home):
+    genie = FakeSource("genie", [REVIEWER])
+    installed = services.recommend("code-reviewer", [genie], kit_home)
+    assert [one.name for one in installed] == ["code-reviewer"]
+    assert genie.uninstalled == []
+
+
+def test_recommend_replaces_the_skill_when_it_is_already_installed(kit_home):
+    genie = FakeSource("genie", [REVIEWER])
+    services.install(ComponentKind.SKILL, "code-reviewer", [genie], kit_home)
+    services.recommend("code-reviewer", [genie], kit_home)
+    assert genie.uninstalled == [(ComponentKind.SKILL, "code-reviewer")]
+    assert len(genie.installed) == 2
+    assert len(services.get_installed_components(home=kit_home)) == 1
+
+
+def test_recommend_overwrites_a_copy_the_kit_has_no_record_of(kit_home):
+    genie = FakeSource("genie", [REVIEWER])
+    services.recommend("code-reviewer", [genie], kit_home)
+    assert genie.forced == ["code-reviewer"]
+
+
+def test_install_does_not_overwrite_by_default(kit_home):
+    genie = FakeSource("genie", [REVIEWER])
+    services.install(ComponentKind.SKILL, "code-reviewer", [genie], kit_home)
+    assert genie.forced == []
+
+
+def test_recommend_without_a_skill_name_is_a_usage_error(kit_home):
+    genie = FakeSource("genie", [REVIEWER])
+    with pytest.raises(UsageError):
+        services.recommend("", [genie], kit_home)
+    assert genie.installed == []
+
+
 def test_listing_without_a_kit_says_to_run_init(tmp_path):
     with pytest.raises(KitNotFound) as raised:
         services.get_installed_components(home=tmp_path / "absent")

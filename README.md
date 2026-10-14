@@ -43,12 +43,18 @@ what it will access **before** it runs. Declining a step skips it and continues 
 of the setup still completes, and re-running finishes what you skipped. Running it twice
 leaves exactly the same state as running it once.
 
-### `ck search <kind> [--recommend] "<query>"`
+In a terminal, it ends by offering to run `ck recommend`.
+
+### `ck recommend`
+
+Installs the recommendation skill, or replaces it with the newest version if it is already
+installed, then opens Claude Code with it. Claude asks about your specialties and walks you
+through the skills worth having.
+
+### `ck search <kind> "<query>"`
 
 Searches every registered source in parallel and shows name, description, source, version
 and popularity where the source publishes it.
-
-- `--recommend` — only packages the main registry recommends.
 
 An unreachable source is named, and the sources that did answer still return their results.
 

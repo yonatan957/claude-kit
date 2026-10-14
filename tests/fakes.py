@@ -32,6 +32,7 @@ class FakeSource(Source):
         self.searched: list[tuple[ComponentKind, str]] = []
         self.installed: list[tuple[ComponentKind, str]] = []
         self.uninstalled: list[tuple[ComponentKind, str]] = []
+        self.forced: list[str] = []
 
     @property
     def name(self) -> str:
@@ -49,10 +50,14 @@ class FakeSource(Source):
             if component.kind == kind and query in component.name
         ]
 
-    def install(self, kind: ComponentKind, name: str) -> list[ClaudeComponent]:
+    def install(
+        self, kind: ComponentKind, name: str, force: bool = False
+    ) -> list[ClaudeComponent]:
         if not self.supports(kind):
             return []
         self.installed.append((kind, name))
+        if force:
+            self.forced.append(name)
         if self.failure:
             raise self.failure
         return self._find_components_by_name(kind, name)

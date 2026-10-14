@@ -1,5 +1,6 @@
 """``ck``: the command line over claude-kit's services."""
 
+import sys
 from importlib import metadata
 from pathlib import Path
 from typing import Annotated
@@ -8,7 +9,13 @@ import typer
 
 from claude_kit import services
 from claude_kit.components import ClaudeComponent, ComponentKind, InstalledComponent
-from claude_kit.helpers import ExitCode, KitError, ToolStatus
+from claude_kit.helpers import (
+    RECOMMEND_SKILL_NAME,
+    ExitCode,
+    KitError,
+    ToolStatus,
+    run_claude,
+)
 
 KINDS = "skill, agent, mcp, tool or plugin"
 
@@ -76,6 +83,33 @@ def init(
 
     if not result.ok:
         raise typer.Exit(ExitCode.FAILURE)
+
+    if not report.ok:
+        return
+    if sys.stdin.isatty() and typer.confirm(
+        "Walk through recommended skills with Claude now?"
+    ):
+        recommend(home)
+    else:
+        typer.echo("run `ck recommend` to pick skills for your specialties with Claude")
+
+
+@app.command()
+def recommend(home: Home = None) -> None:
+    """Install or update the recommendation skill, then let Claude walk you through it."""
+    installed = services.recommend(home=home)
+    if not installed:
+        typer.secho(
+            f"no source had skill {RECOMMEND_SKILL_NAME!r}", fg=typer.colors.RED, err=True
+        )
+        raise typer.Exit(ExitCode.NOT_FOUND)
+    _print_components(installed)
+    raise typer.Exit(
+        run_claude(
+            f"Use the {RECOMMEND_SKILL_NAME} skill. Start the conversation yourself: "
+            "say what we are about to do, then ask me your first question."
+        )
+    )
 
 
 @app.command()

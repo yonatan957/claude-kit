@@ -30,8 +30,11 @@ class Source(ABC):
         """Components of ``kind`` matching ``query``. Empty ``query`` lists all."""
 
     @abstractmethod
-    def install(self, kind: ComponentKind, name: str) -> list[ClaudeComponent]:
-        """Install ``name``, and answer with what was installed."""
+    def install(
+        self, kind: ComponentKind, name: str, force: bool = False
+    ) -> list[ClaudeComponent]:
+        """Install ``name``, and answer with what was installed. ``force``
+        overwrites a copy already on disk instead of refusing."""
 
     @abstractmethod
     def uninstall(self, kind: ComponentKind, name: str) -> list[ClaudeComponent]:

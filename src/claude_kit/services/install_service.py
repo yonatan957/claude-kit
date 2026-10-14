@@ -14,6 +14,7 @@ def install(
     name: str,
     sources: list[Source] | None = None,
     home: Path | None = None,
+    force: bool = False,
 ) -> list[ClaudeComponent]:
     sources = AVAILABLE_SOURCES if sources is None else sources
     connection = storage.open_kit_database(home)
@@ -24,7 +25,7 @@ def install(
             raise Conflict(f"{kind} {name!r} is already installed from {source}")
 
         for source in sources:
-            installed = source.install(kind, name)
+            installed = source.install(kind, name, force)
             if installed:
                 installed_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
                 for component in installed:

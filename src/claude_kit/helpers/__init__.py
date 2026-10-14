@@ -7,6 +7,7 @@ from claude_kit.helpers.consts import (
     CLAUDE_KIT_HOME,
     CLAUDE_LABEL,
     DATABASE_FILE_NAME,
+    RECOMMEND_SKILL_NAME,
     STATE_FILE_NAME,
     TIMEOUT,
 )
@@ -29,6 +30,7 @@ from claude_kit.helpers.system import (
     ToolStatus,
     ensure_tool,
     find_binary,
+    run_claude,
     is_installed,
     run,
 )
@@ -52,6 +54,7 @@ __all__ = [
     "CLAUDE_BINARY",
     "CLAUDE_LABEL",
     "CLAUDE_INSTALL_COMMAND",
+    "RECOMMEND_SKILL_NAME",
     "CommandResult",
     "Tool",
     "ToolStatus",
@@ -59,5 +62,6 @@ __all__ = [
     "find_binary",
     "is_installed",
     "run",
+    "run_claude",
     "ensure_tool",
 ]

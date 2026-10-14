@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
-from claude_kit.helpers.consts import TIMEOUT
+from claude_kit.helpers.consts import CLAUDE_BINARY, TIMEOUT
 
 __all__ = [
     "CommandResult",
@@ -16,6 +16,7 @@ __all__ = [
     "find_binary",
     "is_installed",
     "run",
+    "run_claude",
     "ensure_tool",
 ]
 
@@ -98,6 +99,14 @@ def run(command: Sequence[str], timeout: float = TIMEOUT) -> CommandResult:
     return CommandResult(
         label, completed.returncode, completed.stdout, completed.stderr
     )
+
+
+def run_claude(prompt: str) -> int:
+    """Open Claude Code in this terminal with ``prompt``, and wait until the user quits it."""
+    executable = find_binary(CLAUDE_BINARY)
+    if not executable:
+        return _NOT_FOUND_CODE
+    return subprocess.run([executable, prompt], check=False).returncode
 
 
 def ensure_tool(tool: Tool, install: bool = True) -> ToolReport:

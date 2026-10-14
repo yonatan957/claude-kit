@@ -44,11 +44,15 @@ class SkillHubSource(Source):
             raise self._to_source_error(failure) from failure
         return [self._to_component(kind, skill) for skill in found]
 
-    def install(self, kind: ComponentKind, name: str) -> list[ClaudeComponent]:
+    def install(
+        self, kind: ComponentKind, name: str, force: bool = False
+    ) -> list[ClaudeComponent]:
         if not self.supports(kind):
             return []
         try:
-            installed = self.client.install(name)
+            installed = self.client.install(
+                name, agent="claude-code", scope="user", force=force
+            )
         except SkillHubError as failure:
             if _is_missing(failure):
                 return []
