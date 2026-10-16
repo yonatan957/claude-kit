@@ -1,0 +1,23 @@
+[importlinter]
+root_packages =
+    claude_kit
+    skillhub_library
+
+[importlinter:contract:claude-kit-layers]
+name = claude-kit is layered
+type = layers
+layers =
+    claude_kit.cli
+    claude_kit.services
+    claude_kit.sources
+    claude_kit.storage
+    claude_kit.components
+    claude_kit.helpers
+
+[importlinter:contract:library-is-independent]
+name = skillhub_library does not know about claude_kit
+type = forbidden
+source_modules =
+    skillhub_library
+forbidden_modules =
+    claude_kit
