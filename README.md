@@ -43,12 +43,18 @@ what it will access **before** it runs. Declining a step skips it and continues 
 of the setup still completes, and re-running finishes what you skipped. Running it twice
 leaves exactly the same state as running it once.
 
-### `ck search <kind> [--recommend] "<query>"`
+In a terminal, it ends by offering to run `ck recommend`.
+
+### `ck recommend`
+
+Installs the recommendation skill, or replaces it with the newest version if it is already
+installed, then opens Claude Code with it. Claude asks about your specialties and walks you
+through the skills worth having.
+
+### `ck search <kind> "<query>"`
 
 Searches every registered source in parallel and shows name, description, source, version
 and popularity where the source publishes it.
-
-- `--recommend` — only packages the main registry recommends.
 
 An unreachable source is named, and the sources that did answer still return their results.
 
@@ -65,9 +71,13 @@ are never written to the manifest, logs, or a command line.
 If anything fails partway, everything is rolled back — the tree is byte-identical to before
 you started.
 
-### `ck list <kind>`
+### `ck list [--kind <kind>]`
 
 Shows what is installed: name, description, version, and a four-character **tag**.
+
+Kind is an option here, not an argument: on `install` and `uninstall` it addresses one
+package, but on `list` it filters what you already have, and listing every kind at once is
+the common case.
 
 The tag is what tells two same-named packages apart. A plugin is one opaque package: the
 skills and agents bundled inside it are not listed separately and cannot be removed on
@@ -117,23 +127,31 @@ news from "it failed".
 
 ## Where things go
 
-Everything lives under your Claude configuration directory (`CLAUDE_CONFIG_DIR`, or
-`~/.claude`):
+Installed packages go where Claude Code expects them, under your Claude configuration
+directory (`CLAUDE_CONFIG_DIR`, or `~/.claude`):
 
 ```text
 skills/ agents/ mcp/ tools/ plugins/   installed packages
-.claude-kit/
-├── manifest.json    what is installed, and every file it owns
-├── status.json      the most recent version check
+```
+
+What claude-kit knows lives in its own directory (`CLAUDE_KIT_HOME`, or `~/.claude-kit`),
+beside Claude Code's rather than inside it, so reinstalling one never disturbs the other:
+
+```text
+~/.claude-kit
+├── installed.db     knowledge about which components are installed
+├── state.json       the last status check
 ├── registry/        the local copy of the main registry
 └── journal/         in-flight transaction; empty in steady state
 ```
+
 
 ## Configuration
 
 | Variable | Purpose |
 |----------|---------|
 | `CLAUDE_CONFIG_DIR` | Where Claude Code's configuration lives. Defaults to `~/.claude`. |
+| `CLAUDE_KIT_HOME` | Where claude-kit keeps its own files. Defaults to `~/.claude-kit`. |
 | `CLAUDE_KIT_CATALOG_URL` | HTTPS base URL for the recommended-package catalog. |
 | `CLAUDE_KIT_CATALOG_REPOSITORY` | Git URL for the main registry, used when `git` is on PATH. |
 

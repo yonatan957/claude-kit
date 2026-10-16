@@ -11,6 +11,7 @@ __all__ = [
     "CLINotFoundError",
     "CLITimeoutError",
     "CommandError",
+    "MalformedAnswerError",
 ]
 
 
@@ -45,3 +46,12 @@ class CommandError(SkillHubError):
         self.raw = raw
         hint = self.details.get("next")
         super().__init__(f"{message} ({hint})" if hint else message)
+
+
+class MalformedAnswerError(SkillHubError):
+    """The CLI answered, but without a field this library needs.
+
+    Raised at the point of parsing rather than defaulted away, so a payload
+    that changed shape is reported where it broke instead of surfacing later
+    as an empty slug handed back to the CLI.
+    """

@@ -7,9 +7,9 @@ package -- a new CLI flag has to be added deliberately, and a typo cannot
 invent one.
 """
 
-from .base import Request
-from .install import InstallRequest
-from .search import SearchRequest
-from .uninstall import UninstallRequest
+from skillhub_library.dtos.base import Request
+from skillhub_library.dtos.install import InstallRequest
+from skillhub_library.dtos.search import SearchRequest
+from skillhub_library.dtos.uninstall import UninstallRequest
 
 __all__ = ["Request", "SearchRequest", "InstallRequest", "UninstallRequest"]

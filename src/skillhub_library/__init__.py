@@ -15,20 +15,27 @@ Every command shells out to the CLI with ``--json``. A failure raises
 authority on what is and isn't valid.
 """
 
-from ._cli import run
-from .client import SkillHubClient
-from .dtos import InstallRequest, Request, SearchRequest, UninstallRequest
-from .errors import CLINotFoundError, CLITimeoutError, CommandError, SkillHubError
-from .types import (
+from skillhub_library._cli import run
+from skillhub_library.client import SkillHubClient
+from skillhub_library.dtos import InstallRequest, Request, SearchRequest, UninstallRequest
+from skillhub_library.errors import (
+    CLINotFoundError,
+    CLITimeoutError,
+    CommandError,
+    MalformedAnswerError,
+    SkillHubError,
+)
+from skillhub_library.types import (
+    Agent,
     AgentSpec,
     Directory,
     InstallResult,
-    JSONObject,
-    RemoveResult,
     Scope,
     SearchResult,
     Skill,
     Target,
+    TargetAction,
+    UninstallResult,
 )
 
 __all__ = [
@@ -38,15 +45,17 @@ __all__ = [
     "CLINotFoundError",
     "CLITimeoutError",
     "CommandError",
+    "MalformedAnswerError",
     "Skill",
     "SearchResult",
     "Target",
+    "TargetAction",
     "InstallResult",
-    "RemoveResult",
+    "UninstallResult",
     "Scope",
+    "Agent",
     "AgentSpec",
     "Directory",
-    "JSONObject",
     "Request",
     "SearchRequest",
     "InstallRequest",

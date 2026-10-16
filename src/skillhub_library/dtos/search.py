@@ -2,8 +2,8 @@
 
 from dataclasses import dataclass
 
-from ._encode import connection, option
-from .base import Request
+from skillhub_library.dtos._encode import connection, option
+from skillhub_library.dtos.base import Request
 
 __all__ = ["SearchRequest"]
 

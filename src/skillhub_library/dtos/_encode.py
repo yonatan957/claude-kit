@@ -7,7 +7,7 @@ than a bogus ``--flag`` handed to the CLI at runtime.
 
 import os
 
-from ..types import AgentSpec, Directory
+from skillhub_library.types import AgentSpec, Directory
 
 __all__ = ["option", "switch", "repeated", "path", "connection"]
 
