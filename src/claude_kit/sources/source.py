@@ -1,8 +1,16 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from pathlib import Path
 
 from claude_kit.components import ClaudeComponent, ComponentKind
 
-__all__ = ["Source"]
+__all__ = ["InitReport", "Source"]
+
+
+@dataclass(frozen=True)
+class InitReport:
+    ok: bool
+    message: str
 
 
 class Source(ABC):
@@ -24,6 +32,9 @@ class Source(ABC):
 
     def supports(self, kind: ComponentKind) -> bool:
         return kind in self.kinds
+
+    def init(self, home: Path, install_missing: bool) -> InitReport | None:
+        return None
 
     @abstractmethod
     def search(self, kind: ComponentKind, query: str = "") -> list[ClaudeComponent]:

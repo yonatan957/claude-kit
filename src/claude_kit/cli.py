@@ -55,26 +55,29 @@ def init(
     """Set up your claude-kit environment: Claude Code and SkillHub, then the home, database and state."""
     result = services.init(home=home, install_missing=not no_install)
 
-    for report in result.tools:
-        if report.status is ToolStatus.PRESENT:
-            typer.echo(f"{report.tool.label}: found at {report.path}")
-        elif report.status is ToolStatus.INSTALLED:
-            typer.secho(
-                f"{report.tool.label}: installed at {report.path}",
-                fg=typer.colors.GREEN,
-            )
-        elif result.attempted_install:
-            typer.secho(
-                f"{report.tool.label}: missing -- {report.error}",
-                fg=typer.colors.RED,
-                err=True,
-            )
-        else:
-            typer.secho(
-                f"{report.tool.label}: missing -- skipped; `ck init` installs it",
-                fg=typer.colors.YELLOW,
-                err=True,
-            )
+    report = result.claude_code
+    if report.status is ToolStatus.PRESENT:
+        typer.echo(f"{report.tool.label}: found at {report.path}")
+    elif report.status is ToolStatus.INSTALLED:
+        typer.secho(
+            f"{report.tool.label}: installed at {report.path}", fg=typer.colors.GREEN
+        )
+    elif result.attempted_install:
+        typer.secho(
+            f"{report.tool.label}: missing -- {report.error}",
+            fg=typer.colors.RED,
+            err=True,
+        )
+    else:
+        typer.secho(
+            f"{report.tool.label}: missing -- skipped; `ck init` installs it",
+            fg=typer.colors.YELLOW,
+            err=True,
+        )
+
+    for source_report in result.sources:
+        color = None if source_report.ok else typer.colors.RED
+        typer.secho(source_report.message, fg=color, err=not source_report.ok)
 
     created = "created" if result.created_home else "already there"
     typer.echo(f"home:     {result.home} ({created})")
@@ -86,7 +89,7 @@ def init(
     if not result.ok:
         raise typer.Exit(ExitCode.FAILURE)
 
-    if not result.tools_ok:
+    if not report.ok:
         return
     if sys.stdin.isatty() and typer.confirm(
         "Walk through recommended skills with Claude now?"

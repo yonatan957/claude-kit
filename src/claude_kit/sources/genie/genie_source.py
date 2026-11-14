@@ -7,6 +7,7 @@ import os
 import re
 import sys
 from collections.abc import Callable, Mapping, Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any
@@ -18,23 +19,26 @@ from claude_kit.helpers import (
     GENIE_DIR_NAME,
     GENIE_LABEL,
     GENIE_MANIFEST_FILE_NAME,
+    GENIE_MANIFEST_URL,
     MCP_SCOPE,
     NOT_FOUND_CODE,
     TIMED_OUT_CODE,
     CommandResult,
     Conflict,
+    KitError,
     SourceError,
     SourceUnreachable,
     UsageError,
     run,
 )
+from claude_kit.sources.genie.download import download_manifest
 from claude_kit.sources.genie.manifest import (
     GenieEntry,
     GenieInput,
     Manifest,
     load_manifest,
 )
-from claude_kit.sources.source import Source
+from claude_kit.sources.source import InitReport, Source
 
 __all__ = ["GenieSource"]
 
@@ -59,8 +63,10 @@ class GenieSource(Source):
         genie_dir: Path = CLAUDE_KIT_HOME / GENIE_DIR_NAME,
         prompter: Prompter | None = None,
         runner: Callable[..., CommandResult] | None = None,
+        manifest_url: str = GENIE_MANIFEST_URL,
     ) -> None:
         self.genie_dir = genie_dir
+        self.manifest_url = manifest_url
         self.prompter = prompter or ask
         self.runner = runner or run
         self._manifest: Manifest | None = None
@@ -68,6 +74,25 @@ class GenieSource(Source):
     @property
     def name(self) -> str:
         return GENIE_LABEL
+
+    def init(self, home: Path, install_missing: bool) -> InitReport:
+        if not self.manifest_url:
+            return InitReport(True, "genie: not configured")
+        genie_dir = home / GENIE_DIR_NAME
+        try:
+            manifest = download_manifest(self.manifest_url, genie_dir)
+        except (KitError, OSError) as failure:
+            unreachable = isinstance(failure, SourceUnreachable)
+            problem = "unreachable" if unreachable else "failed"
+            kept = "no local copy"
+            old_copy = genie_dir / GENIE_MANIFEST_FILE_NAME
+            if old_copy.is_file():
+                mtime = datetime.fromtimestamp(old_copy.stat().st_mtime, UTC)
+                kept = f"keeping the copy from {mtime.isoformat(timespec='seconds')}"
+            reason = str(failure).removeprefix("genie: ")
+            return InitReport(True, f"genie: {problem} -- {reason}, {kept}")
+        count = len(manifest.entries)
+        return InitReport(True, f"genie: {count} entries from {self.manifest_url}")
 
     def search(self, kind: ComponentKind, query: str = "") -> list[ClaudeComponent]:
         if not self.supports(kind):

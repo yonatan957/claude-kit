@@ -18,6 +18,7 @@ __all__ = [
     "CLAUDE_INSTALL_COMMAND",
     "SKILLHUB_LABEL",
     "RECOMMEND_SKILL_NAME",
+    "GENIE_MANIFEST_URL",
     "GENIE_DIR_NAME",
     "GENIE_MANIFEST_FILE_NAME",
     "GENIE_LABEL",
@@ -52,6 +53,10 @@ SKILLHUB_LABEL = "SkillHub CLI"
 # TODO: the published name of the skill `ck recommend` installs and opens Claude with.
 RECOMMEND_SKILL_NAME = "skill-hub-manager"
 
+# TODO: our GitLab raw URL, e.g.
+# https://gitlab.internal/<group>/genie/-/raw/main/manifest.json
+DEFAULT_GENIE_MANIFEST_URL = "https://gitlab.com/yonatan22660/genie/-/raw/main/manifest.json"
+GENIE_MANIFEST_URL = os.environ.get("GENIE_MANIFEST_URL") or DEFAULT_GENIE_MANIFEST_URL
 GENIE_DIR_NAME = "genie"
 GENIE_MANIFEST_FILE_NAME = "manifest.json"
 GENIE_LABEL = "genie"

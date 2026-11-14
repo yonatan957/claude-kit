@@ -9,10 +9,11 @@ from claude_kit.sources.index import (
     get_source_names,
 )
 from claude_kit.sources.skillhub_source import SkillHubSource
-from claude_kit.sources.source import Source
+from claude_kit.sources.source import InitReport, Source
 
 __all__ = [
     "Source",
+    "InitReport",
     "GenieSource",
     "SkillHubSource",
     "AVAILABLE_SOURCES",

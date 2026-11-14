@@ -1,9 +1,18 @@
 """SkillHub, reached through its CLI, as one of the kit's sources."""
 
+from pathlib import Path
+
 from claude_kit.components import ClaudeComponent, ComponentKind
-from claude_kit.helpers import SourceError, SourceUnreachable
-from claude_kit.sources.source import Source
+from claude_kit.helpers import (
+    SKILLHUB_LABEL,
+    SourceError,
+    SourceUnreachable,
+    Tool,
+    ensure_tool,
+)
+from claude_kit.sources.source import InitReport, Source
 from skillhub_library import SkillHubClient
+from skillhub_library.consts import BINARIES, INSTALL_COMMAND
 from skillhub_library.errors import (
     CLINotFoundError,
     CLITimeoutError,
@@ -19,6 +28,8 @@ __all__ = ["SkillHubSource"]
 #: message and in the registry's own error nested under ``details``.
 _MISSING_WORDS = ("not found", "notfound")
 
+SKILLHUB = Tool(binary=BINARIES[0], label=SKILLHUB_LABEL, install=INSTALL_COMMAND)
+
 
 class SkillHubSource(Source):
     kinds = frozenset({ComponentKind.SKILL})
@@ -32,6 +43,11 @@ class SkillHubSource(Source):
     @property
     def name(self) -> str:
         return "skillhub"
+
+    def init(self, home: Path, install_missing: bool) -> InitReport:
+        found = ensure_tool(SKILLHUB, install=install_missing)
+        message = f"{SKILLHUB.label}: {found.status} -- {found.path or found.error}"
+        return InitReport(found.ok or not install_missing, message)
 
     def search(self, kind: ComponentKind, query: str = "") -> list[ClaudeComponent]:
         if not self.supports(kind):

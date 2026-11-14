@@ -1,3 +1,7 @@
+import os
+from datetime import UTC, datetime
+from pathlib import Path
+
 import pytest
 from conftest import build_component
 from fakes import FakeSource
@@ -17,6 +21,8 @@ from claude_kit.helpers import (
     ToolStatus,
     UsageError,
 )
+from claude_kit.sources import GenieSource, InitReport
+from claude_kit.sources.genie.manifest import load_manifest
 from claude_kit.storage import KitState, VersionStatus, write_state
 
 REVIEWER = build_component(name="code-reviewer", source="genie")
@@ -32,8 +38,10 @@ def no_real_claude_code(monkeypatch):
         path="/usr/bin/claude",
     )
     monkeypatch.setattr(
-        "claude_kit.services.init_service.ensure_tool", lambda tool, install=True: report
+        "claude_kit.services.init_service.ensure_tool",
+        lambda tool, install=True: report,
     )
+    monkeypatch.setattr("claude_kit.services.init_service.AVAILABLE_SOURCES", [])
     return report
 
 
@@ -256,7 +264,7 @@ def test_a_skipped_install_is_not_a_failed_one(tmp_path, monkeypatch):
         "claude_kit.services.init_service.ensure_tool",
         lambda tool, install=True: missing,
     )
-    result = services.init(home=tmp_path / "kit", install_missing=False)
+    result = services.init(home=tmp_path / "kit", install_missing=False, sources=[])
     assert result.claude_code.ok is False
     assert result.ok is True
 
@@ -271,9 +279,68 @@ def test_a_failed_install_fails_init(tmp_path, monkeypatch):
         "claude_kit.services.init_service.ensure_tool",
         lambda tool, install=True: missing,
     )
-    result = services.init(home=tmp_path / "kit", install_missing=True)
+    result = services.init(home=tmp_path / "kit", install_missing=True, sources=[])
     assert result.ok is False
 
 
 def test_the_default_home_is_the_one_the_readme_documents():
     assert CLAUDE_KIT_HOME.name == ".claude-kit"
+
+
+GENIE_URL = "https://gitlab.internal/team/genie/-/raw/main/manifest.json"
+GENIE_DATA = Path(__file__).parent / "data" / "genie" / "manifest.json"
+GENIE_DOWNLOAD = "claude_kit.sources.genie.genie_source.download_manifest"
+
+
+def test_genie_init_copies_the_manifest_and_reports_how_many_entries(
+    tmp_path, monkeypatch
+):
+    asked: list[tuple[str, Path]] = []
+
+    def download(url, genie_dir):
+        asked.append((url, genie_dir))
+        return load_manifest(GENIE_DATA)
+
+    monkeypatch.setattr(GENIE_DOWNLOAD, download)
+    report = GenieSource(manifest_url=GENIE_URL).init(tmp_path / "kit", True)
+    assert asked == [(GENIE_URL, tmp_path / "kit" / "genie")]
+    assert report == InitReport(True, f"genie: 3 entries from {GENIE_URL}")
+
+
+def test_genie_init_without_a_url_downloads_nothing(tmp_path, monkeypatch):
+    monkeypatch.setattr(GENIE_DOWNLOAD, lambda *_: pytest.fail("downloaded"))
+    report = GenieSource(manifest_url="").init(tmp_path / "kit", True)
+    assert report == InitReport(True, "genie: not configured")
+
+
+def test_an_unreachable_genie_is_a_warning_that_keeps_the_old_copy(
+    tmp_path, monkeypatch
+):
+    def download(url, genie_dir):
+        raise SourceUnreachable("genie", f"cannot fetch {url}: timed out")
+
+    monkeypatch.setattr(GENIE_DOWNLOAD, download)
+    genie_dir = tmp_path / "kit" / "genie"
+    genie_dir.mkdir(parents=True)
+    old_copy = genie_dir / "manifest.json"
+    old_copy.write_text("{}")
+    copied_at = datetime(2026, 11, 1, 9, 0, tzinfo=UTC).timestamp()
+    os.utime(old_copy, (copied_at, copied_at))
+
+    report = GenieSource(manifest_url=GENIE_URL).init(tmp_path / "kit", True)
+    assert report.ok
+    assert report.message.endswith("keeping the copy from 2026-11-01T09:00:00+00:00")
+
+
+def test_one_failing_source_does_not_stop_the_others(tmp_path, no_real_claude_code):
+    class Broken(FakeSource):
+        def init(self, home, install_missing):
+            raise SourceUnreachable(self.name, "no network")
+
+    sources = [Broken("broken"), FakeSource("quiet"), GenieSource(manifest_url="")]
+    result = services.init(home=tmp_path / "kit", sources=sources)
+    assert result.sources == [
+        InitReport(False, "broken: no network"),
+        InitReport(True, "genie: not configured"),
+    ]
+    assert result.ok is False
