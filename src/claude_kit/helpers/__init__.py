@@ -7,6 +7,10 @@ from claude_kit.helpers.consts import (
     CLAUDE_KIT_HOME,
     CLAUDE_LABEL,
     DATABASE_FILE_NAME,
+    GENIE_DIR_NAME,
+    GENIE_LABEL,
+    GENIE_MANIFEST_FILE_NAME,
+    MCP_SCOPE,
     RECOMMEND_SKILL_NAME,
     SKILLHUB_LABEL,
     STATE_FILE_NAME,
@@ -33,9 +37,9 @@ from claude_kit.helpers.system import (
     ToolStatus,
     ensure_tool,
     find_binary,
-    run_claude,
     is_installed,
     run,
+    run_claude,
 )
 
 __all__ = [
@@ -59,6 +63,10 @@ __all__ = [
     "CLAUDE_INSTALL_COMMAND",
     "RECOMMEND_SKILL_NAME",
     "SKILLHUB_LABEL",
+    "GENIE_DIR_NAME",
+    "GENIE_MANIFEST_FILE_NAME",
+    "GENIE_LABEL",
+    "MCP_SCOPE",
     "NOT_FOUND_CODE",
     "TIMED_OUT_CODE",
     "CommandResult",

@@ -18,12 +18,13 @@ from claude_kit.services import (
     search,
     uninstall,
 )
-from claude_kit.sources import AVAILABLE_SOURCES, SkillHubSource, Source
+from claude_kit.sources import AVAILABLE_SOURCES, GenieSource, SkillHubSource, Source
 
 __all__ = [
     "ComponentKind",
     "ClaudeComponent",
     "Source",
+    "GenieSource",
     "SkillHubSource",
     "AVAILABLE_SOURCES",
     "CLAUDE_KIT_HOME",

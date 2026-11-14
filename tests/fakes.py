@@ -1,12 +1,18 @@
-from collections.abc import Iterable
-from dataclasses import replace
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import Any
 
 from claude_kit.components import ClaudeComponent, ComponentKind
+from claude_kit.helpers import CLAUDE_BINARY, CommandResult
 from claude_kit.sources import Source
+from claude_kit.sources.genie.manifest import GenieInput
 from skillhub_library.types import InstallResult, SearchResult, UninstallResult
 
 __all__ = [
+    "FakeCall",
+    "FakePrompter",
+    "FakeRunner",
     "FakeSkillHubClient",
     "FakeSource",
     "install_payload",
@@ -17,7 +23,6 @@ __all__ = [
 
 
 class FakeSource(Source):
-
     def __init__(
         self,
         name: str,
@@ -85,7 +90,6 @@ class FakeSource(Source):
 
 
 class FakeSkillHubClient:
-
     def __init__(
         self,
         search: Any = None,
@@ -151,3 +155,81 @@ def install_payload(
 
 def uninstall_payload(*removed: dict[str, Any]) -> UninstallResult:
     return UninstallResult.from_payload({"removed": list(removed)})
+
+
+@dataclass(frozen=True)
+class FakeCall:
+    command: list[str]
+    env: Mapping[str, str] | None
+    label: str
+
+
+class FakeRunner:
+    """Stands in for ``run``: ``claude mcp`` answers from a set of registered names,
+    and scripts succeed. ``failing`` maps a claude action or a script's file name to
+    the stderr it fails with instead."""
+
+    def __init__(
+        self,
+        registered: Iterable[str] = (),
+        failing: Mapping[str, str] | None = None,
+        claude_missing: bool = False,
+    ) -> None:
+        self.registered = set(registered)
+        self.failing = dict(failing or {})
+        self.claude_missing = claude_missing
+        self.calls: list[FakeCall] = []
+
+    def __call__(
+        self,
+        command: Sequence[str],
+        *,
+        env: Mapping[str, str] | None = None,
+        label: str | None = None,
+    ) -> CommandResult:
+        label = label or " ".join(command)
+        self.calls.append(FakeCall(list(command), env, label))
+        return self._answer(list(command), label)
+
+    @property
+    def steps(self) -> list[str]:
+        return [_step(call.command) for call in self.calls]
+
+    def _answer(self, command: list[str], label: str) -> CommandResult:
+        step = _step(command)
+        failure = self.failing.get(Path(command[-1]).name) or self.failing.get(step)
+        if command[0] == CLAUDE_BINARY and self.claude_missing:
+            return CommandResult(label, 127, stderr="claude: not found")
+        if failure:
+            return CommandResult(label, 1, stderr=failure)
+        if command[0] != CLAUDE_BINARY:
+            return CommandResult(label, 0)
+
+        name = command[3]
+        absent = CommandResult(label, 1, stderr=f'No MCP server named "{name}"')
+        if step == "get":
+            return CommandResult(label, 0) if name in self.registered else absent
+        if step == "remove":
+            if name not in self.registered:
+                return absent
+            self.registered.remove(name)
+            return CommandResult(label, 0)
+        self.registered.add(name)
+        return CommandResult(label, 0)
+
+
+def _step(command: list[str]) -> str:
+    """The ``claude mcp`` action, or the script's name without its suffix."""
+    if command[0] == CLAUDE_BINARY:
+        return command[2]
+    return Path(command[-1]).stem
+
+
+class FakePrompter:
+    def __init__(self, answers: Mapping[str, str] | None = None) -> None:
+        self.answers = dict(answers or {})
+        self.asked: list[tuple[str, str | None]] = []
+
+    def __call__(self, question: GenieInput, current: str | None) -> str:
+        self.asked.append((question.key, current))
+        return self.answers.get(question.key, "")

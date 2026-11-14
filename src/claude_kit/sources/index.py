@@ -3,6 +3,7 @@
 from enum import Enum
 
 from claude_kit.helpers import UsageError
+from claude_kit.sources.genie import GenieSource
 from claude_kit.sources.skillhub_source import SkillHubSource
 from claude_kit.sources.source import Source
 
@@ -14,7 +15,7 @@ __all__ = [
     "get_source",
 ]
 
-AVAILABLE_SOURCES: list[Source] = [SkillHubSource()]
+AVAILABLE_SOURCES: list[Source] = [GenieSource(), SkillHubSource()]
 
 
 def get_source_names(sources: list[Source] | None = None) -> list[str]:
@@ -25,7 +26,9 @@ def get_source_names(sources: list[Source] | None = None) -> list[str]:
 SourceName = Enum("SourceEnum", get_source_names())
 
 
-def find_source_by_name(name: str, sources: list[Source] | None = None) -> Source | None:
+def find_source_by_name(
+    name: str, sources: list[Source] | None = None
+) -> Source | None:
     sources = sources or AVAILABLE_SOURCES
     for source in sources:
         if source.name == name:

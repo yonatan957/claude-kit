@@ -11,9 +11,9 @@ from fakes import (
 
 from claude_kit.components import ComponentKind
 from claude_kit.helpers import ExitCode, SourceError, SourceUnreachable, UsageError
-from claude_kit.sources import (
+from claude_kit.sources import SkillHubSource
+from claude_kit.sources.index import (
     AVAILABLE_SOURCES,
-    SkillHubSource,
     find_source_by_name,
     get_source,
     get_source_names,
@@ -142,6 +142,10 @@ def test_a_target_that_was_not_there_is_not_reported_as_removed():
 
 def test_the_registered_sources_are_named_in_precedence_order():
     assert get_source_names() == [source.name for source in AVAILABLE_SOURCES]
+
+
+def test_genie_comes_before_skillhub():
+    assert get_source_names() == ["genie", "skillhub"]
 
 
 def test_find_source_by_name_answers_none_for_a_stranger():

@@ -1,6 +1,8 @@
+from pathlib import Path
+
 import pytest
 from conftest import build_component
-from fakes import FakeSource
+from fakes import FakePrompter, FakeRunner, FakeSource
 from typer.testing import CliRunner
 
 from claude_kit import cli
@@ -16,21 +18,43 @@ from claude_kit.helpers import (
     SourceUnreachable,
     UsageError,
 )
+from claude_kit.sources import GenieSource
 
 runner = CliRunner()
 
 REVIEWER = build_component(name="code-reviewer", source="skillhub")
 
 
-@pytest.fixture
-def sources(monkeypatch):
-    replaced = [FakeSource("skillhub", [REVIEWER])]
+GENIE_MANIFEST = Path(__file__).parent / "data" / "genie" / "manifest.json"
+
+
+def use_sources(monkeypatch, replaced):
     monkeypatch.setattr("claude_kit.services.install_service.AVAILABLE_SOURCES", replaced)
     monkeypatch.setattr("claude_kit.services.search_service.AVAILABLE_SOURCES", replaced)
     monkeypatch.setattr(
         "claude_kit.services.uninstall_service.AVAILABLE_SOURCES", replaced
     )
     return replaced
+
+
+@pytest.fixture
+def sources(monkeypatch):
+    return use_sources(monkeypatch, [FakeSource("skillhub", [REVIEWER])])
+
+
+@pytest.fixture
+def claude() -> FakeRunner:
+    return FakeRunner()
+
+
+@pytest.fixture
+def genie_first(monkeypatch, claude):
+    genie = GenieSource(
+        genie_dir=GENIE_MANIFEST.parent,
+        prompter=FakePrompter({"GITLAB_TOKEN": "glpat-secret"}),
+        runner=claude,
+    )
+    return use_sources(monkeypatch, [genie, FakeSource("skillhub", [REVIEWER])])
 
 
 def test_version_prints_and_exits_clean():
@@ -126,3 +150,40 @@ def test_every_kind_is_a_word_the_cli_accepts():
     for kind in ComponentKind:
         result = runner.invoke(cli.app, ["search", str(kind), "--help"])
         assert result.exit_code == ExitCode.OK
+
+
+def test_an_mcp_from_genie_is_installed_listed_and_uninstalled(genie_first, claude, kit_home):
+    home = ["--home", str(kit_home)]
+    installed = runner.invoke(cli.app, ["install", "mcp", "gitlab", *home])
+    assert installed.exit_code == ExitCode.OK
+    assert "genie" in installed.stdout
+    assert "gitlab" in claude.registered
+
+    listed = runner.invoke(cli.app, ["list", *home]).stdout
+    assert "gitlab" in listed and "genie" in listed
+
+    removed = runner.invoke(cli.app, ["uninstall", "mcp", "gitlab", *home])
+    assert removed.exit_code == ExitCode.OK
+    assert "gitlab" not in claude.registered
+    assert "nothing installed" in runner.invoke(cli.app, ["list", *home]).stdout
+
+
+def test_a_skill_still_reaches_skillhub_with_genie_first(genie_first, claude, kit_home):
+    result = runner.invoke(
+        cli.app, ["install", "skill", "code-reviewer", "--home", str(kit_home)]
+    )
+    assert result.exit_code == ExitCode.OK
+    assert "skillhub" in result.stdout
+    assert claude.calls == []
+
+
+def test_search_lists_genie_mcps(genie_first):
+    result = runner.invoke(cli.app, ["search", "mcp", ""])
+    assert "gitlab" in result.stdout and "k8s" in result.stdout
+
+
+def test_the_token_is_nowhere_in_the_kit_home(genie_first, kit_home):
+    runner.invoke(cli.app, ["install", "mcp", "gitlab", "--home", str(kit_home)])
+    for path in kit_home.rglob("*"):
+        if path.is_file():
+            assert b"glpat-secret" not in path.read_bytes()
