@@ -1,14 +1,17 @@
 """Talking to the machine: what is on PATH, and running the commands that put it there."""
 
+import os
 import shutil
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
 from claude_kit.helpers.consts import CLAUDE_BINARY, TIMEOUT
 
 __all__ = [
+    "NOT_FOUND_CODE",
+    "TIMED_OUT_CODE",
     "CommandResult",
     "Tool",
     "ToolStatus",
@@ -20,8 +23,8 @@ __all__ = [
     "ensure_tool",
 ]
 
-_NOT_FOUND_CODE = 127
-_TIMED_OUT_CODE = 124
+NOT_FOUND_CODE = 127
+TIMED_OUT_CODE = 124
 
 
 @dataclass(frozen=True)
@@ -76,11 +79,17 @@ def is_installed(name: str) -> bool:
     return bool(find_binary(name))
 
 
-def run(command: Sequence[str], timeout: float = TIMEOUT) -> CommandResult:
-    label = " ".join(command)
+def run(
+    command: Sequence[str],
+    timeout: float = TIMEOUT,
+    *,
+    env: Mapping[str, str] | None = None,
+    label: str | None = None,
+) -> CommandResult:
+    label = label or " ".join(command)
     executable = find_binary(command[0])
     if not executable:
-        return CommandResult(label, _NOT_FOUND_CODE, stderr=f"{command[0]}: not found")
+        return CommandResult(label, NOT_FOUND_CODE, stderr=f"{command[0]}: not found")
     try:
         completed = subprocess.run(
             [executable, *command[1:]],
@@ -90,11 +99,12 @@ def run(command: Sequence[str], timeout: float = TIMEOUT) -> CommandResult:
             errors="replace",
             timeout=timeout,
             stdin=subprocess.DEVNULL,
+            env=None if env is None else {**os.environ, **env},
             check=False,
         )
     except subprocess.TimeoutExpired:
         return CommandResult(
-            label, _TIMED_OUT_CODE, stderr=f"timed out after {timeout:g}s"
+            label, TIMED_OUT_CODE, stderr=f"timed out after {timeout:g}s"
         )
     return CommandResult(
         label, completed.returncode, completed.stdout, completed.stderr
@@ -105,7 +115,7 @@ def run_claude(prompt: str) -> int:
     """Open Claude Code in this terminal with ``prompt``, and wait until the user quits it."""
     executable = find_binary(CLAUDE_BINARY)
     if not executable:
-        return _NOT_FOUND_CODE
+        return NOT_FOUND_CODE
     return subprocess.run([executable, prompt], check=False).returncode
 
 

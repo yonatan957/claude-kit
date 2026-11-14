@@ -25,6 +25,8 @@ from claude_kit.helpers.errors import (
     UsageError,
 )
 from claude_kit.helpers.system import (
+    NOT_FOUND_CODE,
+    TIMED_OUT_CODE,
     CommandResult,
     Tool,
     ToolReport,
@@ -57,6 +59,8 @@ __all__ = [
     "CLAUDE_INSTALL_COMMAND",
     "RECOMMEND_SKILL_NAME",
     "SKILLHUB_LABEL",
+    "NOT_FOUND_CODE",
+    "TIMED_OUT_CODE",
     "CommandResult",
     "Tool",
     "ToolStatus",
