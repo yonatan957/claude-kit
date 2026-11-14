@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from claude_kit.components import ClaudeComponent, ComponentKind
 
@@ -9,8 +10,13 @@ __all__ = ["InitReport", "Source"]
 
 @dataclass(frozen=True)
 class InitReport:
-    ok: bool
-    message: str
+    mark: Literal["✓", "!", "✗"]
+    label: str
+    detail: str
+
+    @property
+    def ok(self) -> bool:
+        return self.mark != "✗"
 
 
 class Source(ABC):

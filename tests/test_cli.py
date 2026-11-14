@@ -224,7 +224,7 @@ def test_init_prints_aligned_status_lines_and_no_escape_codes_when_piped(
     assert "\x1b" not in result.output
     lines = result.stdout.splitlines()
     assert lines[0] == "✓ Claude Code   present -- /bin/claude"
-    assert lines[1] == "✓ genie         not configured"
+    assert lines[1] == "! genie         not configured"
     assert [line[:16] for line in lines[2:5]] == [
         "✓ home          ",
         "✓ database      ",

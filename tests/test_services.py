@@ -304,13 +304,13 @@ def test_genie_init_copies_the_manifest_and_reports_how_many_entries(
     monkeypatch.setattr(GENIE_DOWNLOAD, download)
     report = GenieSource(manifest_url=GENIE_URL).init(tmp_path / "kit", True)
     assert asked == [(GENIE_URL, tmp_path / "kit" / "genie")]
-    assert report == InitReport(True, f"genie: 3 entries from {GENIE_URL}")
+    assert report == InitReport("✓", "genie", f"3 entries from {GENIE_URL}")
 
 
 def test_genie_init_without_a_url_downloads_nothing(tmp_path, monkeypatch):
     monkeypatch.setattr(GENIE_DOWNLOAD, lambda *_: pytest.fail("downloaded"))
     report = GenieSource(manifest_url="").init(tmp_path / "kit", True)
-    assert report == InitReport(True, "genie: not configured")
+    assert report == InitReport("!", "genie", "not configured")
 
 
 def test_an_unreachable_genie_is_a_warning_that_keeps_the_old_copy(
@@ -328,8 +328,8 @@ def test_an_unreachable_genie_is_a_warning_that_keeps_the_old_copy(
     os.utime(old_copy, (copied_at, copied_at))
 
     report = GenieSource(manifest_url=GENIE_URL).init(tmp_path / "kit", True)
-    assert report.ok
-    assert report.message.endswith("keeping the copy from 2026-11-01T09:00:00+00:00")
+    assert report.mark == "!"
+    assert report.detail.endswith("keeping the copy from 2026-11-01T09:00:00+00:00")
 
 
 def test_one_failing_source_does_not_stop_the_others(tmp_path, no_real_claude_code):
@@ -340,7 +340,7 @@ def test_one_failing_source_does_not_stop_the_others(tmp_path, no_real_claude_co
     sources = [Broken("broken"), FakeSource("quiet"), GenieSource(manifest_url="")]
     result = services.init(home=tmp_path / "kit", sources=sources)
     assert result.sources == [
-        InitReport(False, "broken: no network"),
-        InitReport(True, "genie: not configured"),
+        InitReport("✗", "broken", "no network"),
+        InitReport("!", "genie", "not configured"),
     ]
     assert result.ok is False

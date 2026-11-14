@@ -1,6 +1,7 @@
 """SkillHub, reached through its CLI, as one of the kit's sources."""
 
 from pathlib import Path
+from typing import Literal
 
 from claude_kit.components import ClaudeComponent, ComponentKind
 from claude_kit.helpers import (
@@ -46,8 +47,11 @@ class SkillHubSource(Source):
 
     def init(self, home: Path, install_missing: bool) -> InitReport:
         found = ensure_tool(SKILLHUB, install=install_missing)
-        message = f"{SKILLHUB.label}: {found.status} -- {found.path or found.error}"
-        return InitReport(found.ok or not install_missing, message)
+        mark: Literal["✓", "!", "✗"] = "✓"
+        if not found.ok:
+            mark = "✗" if install_missing else "!"
+        detail = f"{found.status} -- {found.path or found.error}"
+        return InitReport(mark, SKILLHUB.label, detail)
 
     def search(self, kind: ComponentKind, query: str = "") -> list[ClaudeComponent]:
         if not self.supports(kind):

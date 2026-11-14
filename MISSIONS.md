@@ -8,7 +8,7 @@ starts. Nothing here happens in parallel.
 `todo` not started · `doing` in progress · `review` written, waiting on you · `done` approved
 
 
-| 1 | Record installs in the database | review |
+| 1 | Record installs in the database | done |
 | 2 | The genie source | done |
 | 3 | One look for every command | review |
 | 4 | Search: parallel, tolerant, real columns | todo |
@@ -45,7 +45,7 @@ Then one file per area: `test_storage.py` (18), `test_services.py` (19), `test_s
 
 ---
 
-## 1 — Record installs in the database · review
+## 1 — Record installs in the database · done
 
 **Goal:** `ck list` stops printing `nothing installed`.
 

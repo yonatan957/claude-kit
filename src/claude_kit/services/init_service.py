@@ -73,7 +73,8 @@ def init(
         try:
             report = source.init(home, install_missing)
         except KitError as failure:
-            report = InitReport(False, str(failure))
+            reason = str(failure).removeprefix(f"{source.name}: ")
+            report = InitReport("✗", source.name, reason)
         if report is not None:
             reports.append(report)
 

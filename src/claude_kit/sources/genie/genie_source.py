@@ -77,7 +77,7 @@ class GenieSource(Source):
 
     def init(self, home: Path, install_missing: bool) -> InitReport:
         if not self.manifest_url:
-            return InitReport(True, "genie: not configured")
+            return InitReport("!", self.name, "not configured")
         genie_dir = home / GENIE_DIR_NAME
         try:
             manifest = download_manifest(self.manifest_url, genie_dir)
@@ -90,9 +90,9 @@ class GenieSource(Source):
                 mtime = datetime.fromtimestamp(old_copy.stat().st_mtime, UTC)
                 kept = f"keeping the copy from {mtime.isoformat(timespec='seconds')}"
             reason = str(failure).removeprefix("genie: ")
-            return InitReport(True, f"genie: {problem} -- {reason}, {kept}")
+            return InitReport("!", self.name, f"{problem} -- {reason}, {kept}")
         count = len(manifest.entries)
-        return InitReport(True, f"genie: {count} entries from {self.manifest_url}")
+        return InitReport("✓", self.name, f"{count} entries from {self.manifest_url}")
 
     def search(self, kind: ComponentKind, query: str = "") -> list[ClaudeComponent]:
         if not self.supports(kind):

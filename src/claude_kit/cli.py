@@ -16,7 +16,7 @@ from claude_kit import services
 from claude_kit.components import ClaudeComponent, ComponentKind
 from claude_kit.helpers import RECOMMEND_SKILL_NAME, ExitCode, KitError, run_claude
 
-KINDS = "skill, agent, mcp, tool or plugin"
+KINDS = ", ".join(ComponentKind)
 _COMPONENT_COLUMNS = ["Kind", "Name", "Version", "Source"]
 _MARK_STYLES = {"✓": "green", "!": "yellow", "✗": "red"}
 
@@ -56,7 +56,7 @@ def init(
         ),
     ] = False,
 ) -> None:
-    """Set up your claude-kit environment: Claude Code and SkillHub, then the home, database and state."""
+    """Set up Claude Code, every source, and the kit's home, database and state."""
     result = services.init(home=home, install_missing=not no_install)
 
     report = result.claude_code
@@ -66,8 +66,7 @@ def init(
     detail = f"{report.status} -- {report.path or report.error}"
     _print_status(mark, report.tool.label, detail)
     for source_report in result.sources:
-        label, _, detail = source_report.message.partition(": ")
-        _print_status("✓" if source_report.ok else "✗", label, detail)
+        _print_status(source_report.mark, source_report.label, source_report.detail)
 
     created = "created" if result.created_home else "already there"
     _print_status("✓", "home", f"{result.home} ({created})")
@@ -93,9 +92,7 @@ def recommend(home: Home = None) -> None:
     """Install or update the recommendation skill, then let Claude walk you through it."""
     installed = services.recommend(home=home)
     if not installed:
-        typer.secho(
-            f"no source had skill {RECOMMEND_SKILL_NAME!r}", fg=typer.colors.RED, err=True
-        )
+        _err.print(Text(f"no source had skill {RECOMMEND_SKILL_NAME!r}", style="red"))
         raise typer.Exit(ExitCode.NOT_FOUND)
     _print_components(installed)
     raise typer.Exit(
@@ -129,7 +126,7 @@ def install(
     """Install a skill, agent, mcp, tool or plugin from the first source that has it."""
     installed = services.install(kind, name, home=home)
     if not installed:
-        typer.secho(f"no source had {kind} {name!r}", fg=typer.colors.RED, err=True)
+        _err.print(Text(f"no source had {kind} {name!r}", style="red"))
         raise typer.Exit(ExitCode.NOT_FOUND)
     _print_components(installed)
 
@@ -146,9 +143,7 @@ def uninstall(
         ClaudeComponent(kind=kind, name=name, source=source), home=home
     )
     if not removed:
-        typer.secho(
-            f"{kind} {name!r} was not installed", fg=typer.colors.YELLOW, err=True
-        )
+        _err.print(Text(f"{kind} {name!r} was not installed", style="red"))
         raise typer.Exit(ExitCode.NOT_FOUND)
     _print_components(removed)
 
@@ -215,8 +210,7 @@ def _print_table(columns: list[str], rows: list[list[str]]) -> None:
 
 def _print_status(mark: str, label: str, detail: str) -> None:
     line = Text.assemble((mark, _MARK_STYLES[mark]), f" {label:<13} {detail}")
-    console = _err if mark == "✗" else _out
-    console.print(line, soft_wrap=True)
+    _out.print(line, soft_wrap=True)
 
 
 def run() -> None:
@@ -226,7 +220,7 @@ def run() -> None:
     try:
         app()
     except KitError as failure:
-        typer.secho(str(failure), fg=typer.colors.RED, err=True)
+        _err.print(Text(str(failure), style="red"))
         raise SystemExit(failure.exit_code) from None
 
 
