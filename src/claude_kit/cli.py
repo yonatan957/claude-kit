@@ -1,23 +1,27 @@
 """``ck``: the command line over claude-kit's services."""
 
+import io
 import sys
 from importlib import metadata
 from pathlib import Path
 from typing import Annotated
 
 import typer
+from rich import box
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
 
 from claude_kit import services
-from claude_kit.components import ClaudeComponent, ComponentKind, InstalledComponent
-from claude_kit.helpers import (
-    RECOMMEND_SKILL_NAME,
-    ExitCode,
-    KitError,
-    ToolStatus,
-    run_claude,
-)
+from claude_kit.components import ClaudeComponent, ComponentKind
+from claude_kit.helpers import RECOMMEND_SKILL_NAME, ExitCode, KitError, run_claude
 
 KINDS = "skill, agent, mcp, tool or plugin"
+_COMPONENT_COLUMNS = ["Kind", "Name", "Version", "Source"]
+_MARK_STYLES = {"✓": "green", "!": "yellow", "✗": "red"}
+
+_out = Console(highlight=False)
+_err = Console(stderr=True, highlight=False)
 
 app = typer.Typer(name="ck", no_args_is_help=True, add_completion=False)
 
@@ -56,40 +60,25 @@ def init(
     result = services.init(home=home, install_missing=not no_install)
 
     report = result.claude_code
-    if report.status is ToolStatus.PRESENT:
-        typer.echo(f"{report.tool.label}: found at {report.path}")
-    elif report.status is ToolStatus.INSTALLED:
-        typer.secho(
-            f"{report.tool.label}: installed at {report.path}", fg=typer.colors.GREEN
-        )
-    elif result.attempted_install:
-        typer.secho(
-            f"{report.tool.label}: missing -- {report.error}",
-            fg=typer.colors.RED,
-            err=True,
-        )
-    else:
-        typer.secho(
-            f"{report.tool.label}: missing -- skipped; `ck init` installs it",
-            fg=typer.colors.YELLOW,
-            err=True,
-        )
-
+    mark = "✓"
+    if not report.ok:
+        mark = "✗" if result.attempted_install else "!"
+    detail = f"{report.status} -- {report.path or report.error}"
+    _print_status(mark, report.tool.label, detail)
     for source_report in result.sources:
-        color = None if source_report.ok else typer.colors.RED
-        typer.secho(source_report.message, fg=color, err=not source_report.ok)
+        label, _, detail = source_report.message.partition(": ")
+        _print_status("✓" if source_report.ok else "✗", label, detail)
 
     created = "created" if result.created_home else "already there"
-    typer.echo(f"home:     {result.home} ({created})")
-    typer.echo(f"database: {result.database}")
-    typer.echo(
-        f"state:    {result.state} ({'created' if result.created_state else 'kept'})"
-    )
+    _print_status("✓", "home", f"{result.home} ({created})")
+    _print_status("✓", "database", str(result.database))
+    kept = "created" if result.created_state else "kept"
+    _print_status("✓", "state", f"{result.state} ({kept})")
 
     if not result.ok:
         raise typer.Exit(ExitCode.FAILURE)
 
-    if not report.ok:
+    if not report.ok or not all(source.ok for source in result.sources):
         return
     if sys.stdin.isatty() and typer.confirm(
         "Walk through recommended skills with Claude now?"
@@ -177,8 +166,12 @@ def list_installed(
     if not installed:
         typer.echo("nothing installed")
         return
+    rows = []
     for entry in installed:
-        _print_installed_component(entry)
+        component = entry.component
+        name = component.name if entry.enabled else f"{component.name} (disabled)"
+        rows.append([component.kind, name, component.version or "-", component.source])
+    _print_table(_COMPONENT_COLUMNS, rows)
 
 
 @app.command()
@@ -188,10 +181,12 @@ def status(home: Home = None) -> None:
     typer.echo(state.message or "no message")
     if state.checked_at:
         typer.echo(f"checked at {state.checked_at}")
+    rows = []
     for name, version in state.versions.items():
-        behind = f" ({version.behind_by} behind)" if version.behind_by else ""
-        installed = version.installed or "-"
-        typer.echo(f"  {name:20} {installed:12} -> {version.available or '-'}{behind}")
+        behind = str(version.behind_by or "")
+        rows.append([name, version.installed or "-", version.available or "-", behind])
+    if rows:
+        _print_table(["Name", "Installed", "Available", "Behind"], rows)
 
 
 def _print_version() -> None:
@@ -204,23 +199,30 @@ def _print_version() -> None:
 
 
 def _print_components(components: list[ClaudeComponent]) -> None:
-    for component in components:
-        version = component.version or "-"
-        typer.echo(
-            f"{component.kind:8} {component.name:24} {version:10} {component.source}"
-        )
+    rows = [
+        [component.kind, component.name, component.version or "-", component.source]
+        for component in components
+    ]
+    _print_table(_COMPONENT_COLUMNS, rows)
 
 
-def _print_installed_component(installed: InstalledComponent) -> None:
-    component = installed.component
-    version = component.version or "-"
-    disabled = "" if installed.enabled else "  (disabled)"
-    typer.echo(
-        f"{component.kind:8} {component.name:24} {version:10} {component.source}{disabled}"
-    )
+def _print_table(columns: list[str], rows: list[list[str]]) -> None:
+    table = Table(*columns, box=box.ROUNDED, header_style="bold")
+    for row in rows:
+        table.add_row(*[Text(cell) for cell in row])
+    _out.print(table)
+
+
+def _print_status(mark: str, label: str, detail: str) -> None:
+    line = Text.assemble((mark, _MARK_STYLES[mark]), f" {label:<13} {detail}")
+    console = _err if mark == "✗" else _out
+    console.print(line, soft_wrap=True)
 
 
 def run() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(errors="replace")
     try:
         app()
     except KitError as failure:

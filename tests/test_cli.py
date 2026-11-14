@@ -16,6 +16,9 @@ from claude_kit.helpers import (
     RolledBack,
     SourceError,
     SourceUnreachable,
+    Tool,
+    ToolReport,
+    ToolStatus,
     UsageError,
 )
 from claude_kit.sources import GenieSource
@@ -187,3 +190,43 @@ def test_the_token_is_nowhere_in_the_kit_home(genie_first, kit_home):
     for path in kit_home.rglob("*"):
         if path.is_file():
             assert b"glpat-secret" not in path.read_bytes()
+
+
+def test_list_is_a_table_with_one_row_per_component(sources, kit_home):
+    home = ["--home", str(kit_home)]
+    runner.invoke(cli.app, ["install", "skill", "code-reviewer", *home])
+    lines = runner.invoke(cli.app, ["list", *home]).stdout.splitlines()
+    rows = [
+        [cell.strip() for cell in line.strip("│").split("│")]
+        for line in lines
+        if line.startswith("│")
+    ]
+    assert rows == [
+        ["Kind", "Name", "Version", "Source"],
+        ["skill", "code-reviewer", "-", "skillhub"],
+    ]
+
+
+def test_init_prints_aligned_status_lines_and_no_escape_codes_when_piped(
+    monkeypatch, tmp_path
+):
+    claude = Tool(binary="claude", label="Claude Code")
+    present = ToolReport(claude, ToolStatus.PRESENT, path="/bin/claude")
+    init_service = "claude_kit.services.init_service"
+    monkeypatch.setattr(
+        f"{init_service}.ensure_tool", lambda tool, install=True: present
+    )
+    monkeypatch.setattr(
+        f"{init_service}.AVAILABLE_SOURCES", [GenieSource(manifest_url="")]
+    )
+    result = runner.invoke(cli.app, ["init", "--home", str(tmp_path / "kit")])
+
+    assert "\x1b" not in result.output
+    lines = result.stdout.splitlines()
+    assert lines[0] == "✓ Claude Code   present -- /bin/claude"
+    assert lines[1] == "✓ genie         not configured"
+    assert [line[:16] for line in lines[2:5]] == [
+        "✓ home          ",
+        "✓ database      ",
+        "✓ state         ",
+    ]
