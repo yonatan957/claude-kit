@@ -9,7 +9,7 @@ starts. Nothing here happens in parallel.
 
 
 | 1 | Record installs in the database | review |
-| 2 | The genie source | todo |
+| 2 | The genie source | review |
 | 3 | Search: parallel, tolerant, real columns | todo |
 | 4 | `install --source` and `--upgrade` | todo |
 | 5 | `CLAUDE_CONFIG_DIR` | todo |
@@ -62,7 +62,7 @@ Installing the same thing twice exits 6 instead of showing a traceback.
 
 ---
 
-## 2 — The genie source
+## 2 — The genie source · review
 
 **Goal:** the main registry, first in precedence. It installs `mcp` entries through
 `claude mcp add-json` / `remove`, and `tool` entries through the install and uninstall
