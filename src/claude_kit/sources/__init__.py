@@ -1,6 +1,6 @@
 """The sources components come from, and the interface they all satisfy."""
 
-from claude_kit.sources.available import (
+from claude_kit.sources.index import (
     AVAILABLE_SOURCES,
     SourceName,
     find_source_by_name,
