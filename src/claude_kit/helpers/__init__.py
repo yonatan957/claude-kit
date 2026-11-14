@@ -8,6 +8,7 @@ from claude_kit.helpers.consts import (
     CLAUDE_LABEL,
     DATABASE_FILE_NAME,
     RECOMMEND_SKILL_NAME,
+    SKILLHUB_LABEL,
     STATE_FILE_NAME,
     TIMEOUT,
 )
@@ -55,6 +56,7 @@ __all__ = [
     "CLAUDE_LABEL",
     "CLAUDE_INSTALL_COMMAND",
     "RECOMMEND_SKILL_NAME",
+    "SKILLHUB_LABEL",
     "CommandResult",
     "Tool",
     "ToolStatus",

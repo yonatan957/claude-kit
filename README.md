@@ -1,5 +1,34 @@
 # claude-kit
 
+## Try it on your machine
+
+Needs Python 3.11+ and Node/npm.
+
+**You need the SkillHub CLI.** `ck` gets skills through it; without it, `search`, `install`
+and `recommend` fail with "SkillHub CLI not found". `ck init` installs it for you when it is
+missing, or install it yourself first:
+
+npm install -g @skillhub/cli
+
+```console
+npm install -g @astron-team/skillhub
+skillhub version              # check it is on your PATH (or set SKILLHUB_BIN to its path)
+```
+
+Then:
+
+```console
+git clone <this repo> && cd claude-kit
+pip install -e ".[dev]"
+
+pytest && lint-imports        # offline: fakes only, no network or processes
+ck init                       # installs Claude Code and SkillHub if missing, creates ~/.claude-kit
+ck search skill "code review"
+ck install skill <name>       # lands in ~/.claude/skills/<name>
+ck list
+ck recommend                  # installs the recommendation skill, then opens Claude
+```
+
 One uniform way to discover, install, inspect and remove the add-ons that extend Claude
 Code — **skills, agents, MCP servers, tools (tools are general system that help claude code - installed usually with installation script) and plugins** — regardless of which source they
 come from.
@@ -36,7 +65,8 @@ accepts all five with the same shape.
 
 ### `ck init`
 
-Installs Claude Code if it is absent, then retrieves the recommended-package catalog.
+Installs Claude Code and the SkillHub CLI if they are absent, then retrieves the
+recommended-package catalog.
 
 Every step that runs an external program or reaches the network says what it will run and
 what it will access **before** it runs. Declining a step skips it and continues — the rest

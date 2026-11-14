@@ -64,24 +64,16 @@ Installing the same thing twice exits 6 instead of showing a traceback.
 
 ## 2 — The genie source
 
-**Goal:** the main registry, first in precedence.
+**Goal:** the main registry, first in precedence. It installs `mcp` entries through
+`claude mcp add-json` / `remove`, and `tool` entries through the install and uninstall
+scripts a manifest names. Inputs are asked interactively, passed to the script as env
+vars, and never stored. Also renames `sources/available.py` to `sources/index.py`.
 
-**Files:** new `sources/genie_source.py`, one line changed in `sources/available.py`.
+**Full plan, file by file:** [`missions/02-genie-source.md`](missions/02-genie-source.md)
 
-This is the biggest single gap. Four separate things in the README depend on it:
-
-- `agent`, `mcp`, `tool` and `plugin` have no provider at all until genie serves them.
-  SkillHub serves skills only.
-- Precedence and `--source` mean nothing with one source in the list.
-- The catalog lives here.
-
-**What I need from you:** I could not find genie anywhere — no API, no CLI name, no auth, no
-JSON shapes. Tell me what it actually is and I target it directly. Otherwise I build the
-source against a clearly marked stub, so precedence and the four kinds become real and
-testable now, and the stub gets swapped for the real thing later.
-
-**Done when:** `ck search agent ""` reaches genie, and `ck install skill x --source genie`
-picks genie over skillhub.
+**Done when:** `ck install mcp gitlab` asks for the token, `claude mcp get gitlab` shows it
+in user scope, `ck list` lists it from `genie`, and `ck install skill x` still reaches
+skillhub.
 
 ---
 

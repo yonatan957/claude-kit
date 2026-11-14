@@ -16,6 +16,7 @@ __all__ = [
     "CLAUDE_BINARY",
     "CLAUDE_LABEL",
     "CLAUDE_INSTALL_COMMAND",
+    "SKILLHUB_LABEL",
     "RECOMMEND_SKILL_NAME",
 ]
 
@@ -42,6 +43,7 @@ CHECK_INTERVAL_HOURS = int(
 CLAUDE_BINARY = os.environ.get("CLAUDE_BIN") or "claude"
 CLAUDE_LABEL = "Claude Code"
 CLAUDE_INSTALL_COMMAND = ("npm", "install", "-g", "@anthropic-ai/claude-code")
+SKILLHUB_LABEL = "SkillHub CLI"
 
 # TODO: the published name of the skill `ck recommend` installs and opens Claude with.
 RECOMMEND_SKILL_NAME = "skill-hub-manager"

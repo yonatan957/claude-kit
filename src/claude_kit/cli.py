@@ -47,32 +47,34 @@ def init(
     no_install: Annotated[
         bool,
         typer.Option(
-            "--no-install", help="Leave Claude Code alone when it is missing."
+            "--no-install",
+            help="Leave Claude Code and SkillHub alone when they are missing.",
         ),
     ] = False,
 ) -> None:
-    """Set up your claude-kit environment: Claude Code, then the home, database and state."""
+    """Set up your claude-kit environment: Claude Code and SkillHub, then the home, database and state."""
     result = services.init(home=home, install_missing=not no_install)
-    report = result.claude_code
 
-    if report.status is ToolStatus.PRESENT:
-        typer.echo(f"{report.tool.label}: found at {report.path}")
-    elif report.status is ToolStatus.INSTALLED:
-        typer.secho(
-            f"{report.tool.label}: installed at {report.path}", fg=typer.colors.GREEN
-        )
-    elif result.attempted_install:
-        typer.secho(
-            f"{report.tool.label}: missing -- {report.error}",
-            fg=typer.colors.RED,
-            err=True,
-        )
-    else:
-        typer.secho(
-            f"{report.tool.label}: missing -- skipped; `ck init` installs it",
-            fg=typer.colors.YELLOW,
-            err=True,
-        )
+    for report in result.tools:
+        if report.status is ToolStatus.PRESENT:
+            typer.echo(f"{report.tool.label}: found at {report.path}")
+        elif report.status is ToolStatus.INSTALLED:
+            typer.secho(
+                f"{report.tool.label}: installed at {report.path}",
+                fg=typer.colors.GREEN,
+            )
+        elif result.attempted_install:
+            typer.secho(
+                f"{report.tool.label}: missing -- {report.error}",
+                fg=typer.colors.RED,
+                err=True,
+            )
+        else:
+            typer.secho(
+                f"{report.tool.label}: missing -- skipped; `ck init` installs it",
+                fg=typer.colors.YELLOW,
+                err=True,
+            )
 
     created = "created" if result.created_home else "already there"
     typer.echo(f"home:     {result.home} ({created})")
@@ -84,7 +86,7 @@ def init(
     if not result.ok:
         raise typer.Exit(ExitCode.FAILURE)
 
-    if not report.ok:
+    if not result.tools_ok:
         return
     if sys.stdin.isatty() and typer.confirm(
         "Walk through recommended skills with Claude now?"

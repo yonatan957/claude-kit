@@ -13,7 +13,13 @@ importing this package has no effect.
 
 import os
 
-__all__ = ["BINARIES", "BINARY_ENV_VAR", "INSTALL_HINT", "REQUEST_TIMEOUT"]
+__all__ = [
+    "BINARIES",
+    "BINARY_ENV_VAR",
+    "INSTALL_COMMAND",
+    "INSTALL_HINT",
+    "REQUEST_TIMEOUT",
+]
 
 #: Environment variable holding one explicit path to the CLI, for when it is
 #: installed somewhere :func:`shutil.which` will not find it.
@@ -26,8 +32,9 @@ _override = os.environ.get(BINARY_ENV_VAR)
 #: it: naming a path and then falling back to ``$PATH`` would hide a typo in it.
 BINARIES: tuple[str, ...] = (_override,) if _override else ("skillhub",)
 
-#: How to get the CLI, quoted back when locating it fails.
-INSTALL_HINT = "npm install -g @astron-team/skillhub"
+#: How to get the CLI: run by ``ck init``, and quoted back when locating it fails.
+INSTALL_COMMAND: tuple[str, ...] = ("npm", "install", "-g", "@astron-team/skillhub")
+INSTALL_HINT = " ".join(INSTALL_COMMAND)
 
 #: Seconds to wait for a single CLI invocation to finish before giving up. It
 #: bounds one ``subprocess.run``, not a whole session: an install that has to
