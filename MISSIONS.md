@@ -70,8 +70,7 @@ Installing the same thing twice exits 6 instead of showing a traceback.
 scripts a manifest names. Inputs are asked interactively, passed to the script as env
 vars, and never stored. Also renames `sources/available.py` to `sources/index.py`.
 
-**Built:** `sources/genie/` (manifest, source, download). `ck init` copies the manifest and
-its scripts into `~/.claude-kit/genie/`; every other command reads only that copy.
+**Built:** `sources/genie/` (manifest, source, repo). `ck init` clones the repo into `~/.claude-kit/genie/`; every other command reads only that copy.
 
 **Done when:** `ck install mcp gitlab` asks for the token, `claude mcp get gitlab` shows it
 in user scope, `ck list` lists it from `genie`, and `ck install skill x` still reaches

@@ -1,5 +1,3 @@
-import os
-from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -287,9 +285,9 @@ def test_the_default_home_is_the_one_the_readme_documents():
     assert CLAUDE_KIT_HOME.name == ".claude-kit"
 
 
-GENIE_URL = "https://gitlab.internal/team/genie/-/raw/main/manifest.json"
+GENIE_URL = "https://gitlab.internal/team/genie.git"
 GENIE_DATA = Path(__file__).parent / "data" / "genie" / "manifest.json"
-GENIE_DOWNLOAD = "claude_kit.sources.genie.genie_source.download_manifest"
+GENIE_SYNC = "claude_kit.sources.genie.genie_source.sync_repo"
 
 
 def test_genie_init_copies_the_manifest_and_reports_how_many_entries(
@@ -297,39 +295,36 @@ def test_genie_init_copies_the_manifest_and_reports_how_many_entries(
 ):
     asked: list[tuple[str, Path]] = []
 
-    def download(url, genie_dir):
+    def sync(url, genie_dir, runner):
         asked.append((url, genie_dir))
         return load_manifest(GENIE_DATA)
 
-    monkeypatch.setattr(GENIE_DOWNLOAD, download)
-    report = GenieSource(manifest_url=GENIE_URL).init(tmp_path / "kit", True)
+    monkeypatch.setattr(GENIE_SYNC, sync)
+    report = GenieSource(repo_url=GENIE_URL).init(tmp_path / "kit", True)
     assert asked == [(GENIE_URL, tmp_path / "kit" / "genie")]
     assert report == InitReport("✓", "genie", f"3 entries from {GENIE_URL}")
 
 
-def test_genie_init_without_a_url_downloads_nothing(tmp_path, monkeypatch):
-    monkeypatch.setattr(GENIE_DOWNLOAD, lambda *_: pytest.fail("downloaded"))
-    report = GenieSource(manifest_url="").init(tmp_path / "kit", True)
+def test_genie_init_without_a_url_clones_nothing(tmp_path, monkeypatch):
+    monkeypatch.setattr(GENIE_SYNC, lambda *_: pytest.fail("cloned"))
+    report = GenieSource(repo_url="").init(tmp_path / "kit", True)
     assert report == InitReport("!", "genie", "not configured")
 
 
 def test_an_unreachable_genie_is_a_warning_that_keeps_the_old_copy(
     tmp_path, monkeypatch
 ):
-    def download(url, genie_dir):
-        raise SourceUnreachable("genie", f"cannot fetch {url}: timed out")
+    def sync(url, genie_dir, runner):
+        raise SourceUnreachable("genie", "git: timed out after 300s")
 
-    monkeypatch.setattr(GENIE_DOWNLOAD, download)
+    monkeypatch.setattr(GENIE_SYNC, sync)
     genie_dir = tmp_path / "kit" / "genie"
     genie_dir.mkdir(parents=True)
-    old_copy = genie_dir / "manifest.json"
-    old_copy.write_text("{}")
-    copied_at = datetime(2026, 11, 1, 9, 0, tzinfo=UTC).timestamp()
-    os.utime(old_copy, (copied_at, copied_at))
+    (genie_dir / "manifest.json").write_text("{}")
 
-    report = GenieSource(manifest_url=GENIE_URL).init(tmp_path / "kit", True)
+    report = GenieSource(repo_url=GENIE_URL).init(tmp_path / "kit", True)
     assert report.mark == "!"
-    assert report.detail.endswith("keeping the copy from 2026-11-01T09:00:00+00:00")
+    assert report.detail.endswith("keeping the local copy")
 
 
 def test_one_failing_source_does_not_stop_the_others(tmp_path, no_real_claude_code):
@@ -337,7 +332,7 @@ def test_one_failing_source_does_not_stop_the_others(tmp_path, no_real_claude_co
         def init(self, home, install_missing):
             raise SourceUnreachable(self.name, "no network")
 
-    sources = [Broken("broken"), FakeSource("quiet"), GenieSource(manifest_url="")]
+    sources = [Broken("broken"), FakeSource("quiet"), GenieSource(repo_url="")]
     result = services.init(home=tmp_path / "kit", sources=sources)
     assert result.sources == [
         InitReport("✗", "broken", "no network"),

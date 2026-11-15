@@ -216,9 +216,7 @@ def test_init_prints_aligned_status_lines_and_no_escape_codes_when_piped(
     monkeypatch.setattr(
         f"{init_service}.ensure_tool", lambda tool, install=True: present
     )
-    monkeypatch.setattr(
-        f"{init_service}.AVAILABLE_SOURCES", [GenieSource(manifest_url="")]
-    )
+    monkeypatch.setattr(f"{init_service}.AVAILABLE_SOURCES", [GenieSource(repo_url="")])
     result = runner.invoke(cli.app, ["init", "--home", str(tmp_path / "kit")])
 
     assert "\x1b" not in result.output

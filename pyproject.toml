@@ -7,7 +7,7 @@ name = "claude-kit"
 version = "0.1.0"
 description = "One uniform way to discover, install and remove Claude Code add-ons."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = "Apache-2.0"
 dependencies = ["typer>=0.12"]
 

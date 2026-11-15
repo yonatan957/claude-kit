@@ -9,7 +9,14 @@ from typing import Any
 from claude_kit.components import ComponentKind
 from claude_kit.helpers import GENIE_LABEL, SourceError, SourceUnreachable
 
-__all__ = ["GenieInput", "GenieEntry", "Manifest", "load_manifest", "parse_manifest"]
+__all__ = [
+    "GenieInput",
+    "GenieEntry",
+    "Manifest",
+    "load_manifest",
+    "parse_manifest",
+    "parse_manifest_text",
+]
 
 MANIFEST_VERSION = 1
 
@@ -61,16 +68,22 @@ class Manifest:
 
 def load_manifest(manifest_path: Path) -> Manifest:
     try:
-        manifest_json = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest_text = manifest_path.read_text(encoding="utf-8")
     except OSError as failure:
         raise SourceUnreachable(
             GENIE_LABEL, f"cannot read {manifest_path}: {failure}"
         ) from failure
+    return parse_manifest_text(manifest_text, str(manifest_path), manifest_path.parent)
+
+
+def parse_manifest_text(
+    manifest_text: str, origin: str, manifest_dir: Path
+) -> Manifest:
+    try:
+        manifest_json = json.loads(manifest_text)
     except json.JSONDecodeError as failure:
-        raise SourceError(
-            GENIE_LABEL, f"{manifest_path} is not JSON: {failure}"
-        ) from failure
-    return parse_manifest(manifest_json, str(manifest_path), manifest_path.parent)
+        raise SourceError(GENIE_LABEL, f"{origin} is not JSON: {failure}") from failure
+    return parse_manifest(manifest_json, origin, manifest_dir)
 
 
 def parse_manifest(manifest_json: Any, origin: str, manifest_dir: Path) -> Manifest:
@@ -87,7 +100,7 @@ def parse_manifest(manifest_json: Any, origin: str, manifest_dir: Path) -> Manif
     return Manifest(entries, manifest_dir)
 
 
-def _parse_entry(entry_json: dict[str, Any]) -> GenieEntry:
+def _parse_entry(entry_json: Any) -> GenieEntry:
     name_for_errors = (
         entry_json.get("name", "?") if isinstance(entry_json, dict) else "?"
     )

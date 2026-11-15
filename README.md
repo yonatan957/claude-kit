@@ -2,7 +2,7 @@
 
 ## Try it on your machine
 
-Needs Python 3.11+ and Node/npm.
+Needs Python 3.12+ and Node/npm.
 
 **You need the SkillHub CLI.** `ck` gets skills through it; without it, `search`, `install`
 and `recommend` fail with "SkillHub CLI not found". `ck init` installs it for you when it is
@@ -65,10 +65,10 @@ accepts all five with the same shape.
 
 ### `ck init`
 
-Installs Claude Code and the SkillHub CLI if they are absent, downloads the genie manifest
-and its scripts into `~/.claude-kit/genie/`, then retrieves the recommended-package catalog.
+Installs Claude Code and the SkillHub CLI if they are absent, clones the genie repo
+(manifest and scripts) into `~/.claude-kit/genie/`, then retrieves the recommended-package catalog.
 Genie is only ever read from that local copy; run `ck init` again to refresh it. If the
-download fails, init says so, keeps the previous copy, and still succeeds.
+clone or update fails, init says so, keeps the previous copy, and still succeeds.
 
 Every step that runs an external program or reaches the network says what it will run and
 what it will access **before** it runs. Declining a step skips it and continues — the rest
@@ -185,7 +185,7 @@ beside Claude Code's rather than inside it, so reinstalling one never disturbs t
 |----------|---------|
 | `CLAUDE_CONFIG_DIR` | Where Claude Code's configuration lives. Defaults to `~/.claude`. |
 | `CLAUDE_KIT_HOME` | Where claude-kit keeps its own files. Defaults to `~/.claude-kit`. |
-| `GENIE_MANIFEST_URL` | Where `ck init` downloads the genie manifest and its scripts from (`https://`). Unset, genie offers nothing. |
+| `GENIE_REPO_URL` | The git repo `ck init` clones genie's manifest and scripts from. Unset, genie offers nothing. |
 | `CLAUDE_KIT_CATALOG_URL` | HTTPS base URL for the recommended-package catalog. |
 | `CLAUDE_KIT_CATALOG_REPOSITORY` | Git URL for the main registry, used when `git` is on PATH. |
 

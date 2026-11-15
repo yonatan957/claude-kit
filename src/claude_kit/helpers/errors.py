@@ -68,6 +68,7 @@ class SourceError(KitError):
     def __init__(self, source: str, message: str) -> None:
         super().__init__(f"{source}: {message}")
         self.source = source
+        self.reason = message
 
 
 class SourceUnreachable(SourceError):

@@ -7,7 +7,6 @@ import os
 import re
 import sys
 from collections.abc import Callable, Mapping, Sequence
-from datetime import UTC, datetime
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any
@@ -19,7 +18,7 @@ from claude_kit.helpers import (
     GENIE_DIR_NAME,
     GENIE_LABEL,
     GENIE_MANIFEST_FILE_NAME,
-    GENIE_MANIFEST_URL,
+    GENIE_REPO_URL,
     MCP_SCOPE,
     NOT_FOUND_CODE,
     TIMED_OUT_CODE,
@@ -31,13 +30,13 @@ from claude_kit.helpers import (
     UsageError,
     run,
 )
-from claude_kit.sources.genie.download import download_manifest
 from claude_kit.sources.genie.manifest import (
     GenieEntry,
     GenieInput,
     Manifest,
     load_manifest,
 )
+from claude_kit.sources.genie.repo import sync_repo
 from claude_kit.sources.source import InitReport, Source
 
 __all__ = ["GenieSource"]
@@ -63,10 +62,10 @@ class GenieSource(Source):
         genie_dir: Path = CLAUDE_KIT_HOME / GENIE_DIR_NAME,
         prompter: Prompter | None = None,
         runner: Callable[..., CommandResult] | None = None,
-        manifest_url: str = GENIE_MANIFEST_URL,
+        repo_url: str = GENIE_REPO_URL,
     ) -> None:
         self.genie_dir = genie_dir
-        self.manifest_url = manifest_url
+        self.repo_url = repo_url
         self.prompter = prompter or ask
         self.runner = runner or run
         self._manifest: Manifest | None = None
@@ -76,23 +75,23 @@ class GenieSource(Source):
         return GENIE_LABEL
 
     def init(self, home: Path, install_missing: bool) -> InitReport:
-        if not self.manifest_url:
+        if not self.repo_url:
             return InitReport("!", self.name, "not configured")
         genie_dir = home / GENIE_DIR_NAME
         try:
-            manifest = download_manifest(self.manifest_url, genie_dir)
+            manifest = sync_repo(self.repo_url, genie_dir, self.runner)
         except (KitError, OSError) as failure:
             unreachable = isinstance(failure, SourceUnreachable)
             problem = "unreachable" if unreachable else "failed"
             kept = "no local copy"
-            old_copy = genie_dir / GENIE_MANIFEST_FILE_NAME
-            if old_copy.is_file():
-                mtime = datetime.fromtimestamp(old_copy.stat().st_mtime, UTC)
-                kept = f"keeping the copy from {mtime.isoformat(timespec='seconds')}"
-            reason = str(failure).removeprefix("genie: ")
+            if (genie_dir / GENIE_MANIFEST_FILE_NAME).is_file():
+                kept = "keeping the local copy"
+            reason = (
+                failure.reason if isinstance(failure, SourceError) else str(failure)
+            )
             return InitReport("!", self.name, f"{problem} -- {reason}, {kept}")
         count = len(manifest.entries)
-        return InitReport("✓", self.name, f"{count} entries from {self.manifest_url}")
+        return InitReport("✓", self.name, f"{count} entries from {self.repo_url}")
 
     def search(self, kind: ComponentKind, query: str = "") -> list[ClaudeComponent]:
         if not self.supports(kind):
@@ -139,15 +138,7 @@ class GenieSource(Source):
         if install_script:
             self._run_script(entry, install_script, input_values, secret_values)
         if mcp_config is not None:
-            if was_registered:
-                self._remove_mcp(entry.name)
-            config_json = json.dumps(mcp_config)
-            add_args = ["add-json", entry.name, config_json, "--scope", MCP_SCOPE]
-            result = self._claude_mcp(
-                *add_args, label=f"claude mcp add-json {entry.name}"
-            )
-            if not result.ok:
-                raise self._command_error(result, secret_values)
+            self._register_mcp(entry.name, mcp_config, was_registered, secret_values)
         return [_to_component(entry)]
 
     def uninstall(self, kind: ComponentKind, name: str) -> list[ClaudeComponent]:
@@ -213,6 +204,21 @@ class GenieSource(Source):
                 result, secret_values, action=f"{entry.name}: {script}"
             )
 
+    def _register_mcp(
+        self,
+        name: str,
+        mcp_config: dict[str, Any],
+        was_registered: bool,
+        secret_values: Sequence[str],
+    ) -> None:
+        if was_registered:
+            self._remove_mcp(name)
+        config_json = json.dumps(mcp_config)
+        add_args = ["add-json", name, config_json, "--scope", MCP_SCOPE]
+        result = self._claude_mcp(*add_args, label=f"claude mcp add-json {name}")
+        if not result.ok:
+            raise self._command_error(result, secret_values)
+
     def _remove_mcp(self, name: str) -> bool:
         result = self._claude_mcp("remove", name, "--scope", MCP_SCOPE)
         if not result.ok and _NOT_REGISTERED_MESSAGE not in result.message.casefold():
@@ -269,18 +275,18 @@ def collect_inputs(entry: GenieEntry, prompter: Prompter) -> dict[str, str]:
     return input_values
 
 
-def _fill_placeholders(template: Any, input_values: Mapping[str, str]) -> Any:
+def _fill_placeholders(template: Any, placeholder_values: Mapping[str, str]) -> Any:
     if isinstance(template, str):
         return _PLACEHOLDER_PATTERN.sub(
-            lambda match: input_values[match.group(1)], template
+            lambda match: placeholder_values[match.group(1)], template
         )
     if isinstance(template, dict):
         return {
-            key: _fill_placeholders(item, input_values)
+            key: _fill_placeholders(item, placeholder_values)
             for key, item in template.items()
         }
     if isinstance(template, list):
-        return [_fill_placeholders(item, input_values) for item in template]
+        return [_fill_placeholders(item, placeholder_values) for item in template]
     return template
 
 
