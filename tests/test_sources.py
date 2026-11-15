@@ -144,8 +144,9 @@ def test_the_registered_sources_are_named_in_precedence_order():
     assert get_source_names() == [source.name for source in AVAILABLE_SOURCES]
 
 
-def test_genie_comes_before_skillhub():
-    assert get_source_names() == ["genie", "skillhub"]
+def test_genie_comes_first_so_its_repo_is_there_for_the_marketplaces():
+    names = get_source_names()
+    assert (names[0], names[-1]) == ("genie", "skillhub")
 
 
 def test_find_source_by_name_answers_none_for_a_stranger():

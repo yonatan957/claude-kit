@@ -3,19 +3,36 @@
 from enum import Enum
 
 from claude_kit.helpers import UsageError
-from claude_kit.sources.genie import GenieSource
+from claude_kit.sources.genie import GenieSource, read_marketplaces
+from claude_kit.sources.marketplace_source import MarketplaceSource
 from claude_kit.sources.skillhub_source import SkillHubSource
 from claude_kit.sources.source import Source
 
 __all__ = [
     "AVAILABLE_SOURCES",
+    "refresh_sources",
     "SourceName",
     "get_source_names",
     "find_source_by_name",
     "get_source",
 ]
 
-AVAILABLE_SOURCES: list[Source] = [GenieSource(), SkillHubSource()]
+
+def build_sources() -> list[Source]:
+    """Every source the kit has, in precedence order. One per marketplace genie lists,
+    and genie first: its init pulls the repo that list lives in."""
+    marketplaces = [
+        MarketplaceSource(name, url) for name, url in read_marketplaces().items()
+    ]
+    return [GenieSource(), *marketplaces, SkillHubSource()]
+
+
+AVAILABLE_SOURCES: list[Source] = build_sources()
+
+
+def refresh_sources() -> None:
+    """Rebuild in place, so a source's init can bring in new sources (genie's list)."""
+    AVAILABLE_SOURCES[:] = build_sources()
 
 
 def get_source_names(sources: list[Source] | None = None) -> list[str]:

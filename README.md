@@ -70,6 +70,13 @@ Installs Claude Code and the SkillHub CLI if they are absent, clones the genie r
 Genie is only ever read from that local copy; run `ck init` again to refresh it. If the
 clone or update fails, init says so, keeps the previous copy, and still succeeds.
 
+The genie repo's `marketplaces.json` (`{"<name>": "<git url>"}`) lists the team's Claude
+Code plugin marketplaces. Each one is a source of its own, named after the marketplace:
+init registers it with `claude plugin marketplace add`, or refreshes it with `update` if
+Claude Code already has it, and reports a line for each. Plugins install through
+`claude plugin install <plugin>@<marketplace>`. Adding a marketplace is an edit to that
+file, not to claude-kit.
+
 Every step that runs an external program or reaches the network says what it will run and
 what it will access **before** it runs. Declining a step skips it and continues — the rest
 of the setup still completes, and re-running finishes what you skipped. Running it twice
@@ -86,7 +93,8 @@ through the skills worth having.
 ### `ck search <kind> "<query>"`
 
 Searches every registered source in parallel and shows name, description, source, version
-and popularity where the source publishes it.
+and popularity where the source publishes it. Each source contributes at most 20 results,
+so one large marketplace does not bury the rest — narrow the query to see more.
 
 An unreachable source is named, and the sources that did answer still return their results.
 
@@ -95,7 +103,8 @@ An unreachable source is named, and the sources that did answer still return the
 - `--source` — install only from that source.
 - `--upgrade` — replace it if already installed.
 
-Without `--source`, sources are consulted in precedence order (`genie` first) and the
+Without `--source`, sources are consulted in precedence order (`genie`, then the
+marketplaces in the order `marketplaces.json` lists them, then SkillHub) and the
 source actually used is reported. If the package needs configuration, you are asked for
 each value one at a time, and told what it is for and where it will be stored. Credentials
 are never written to the manifest, logs, or a command line.
@@ -173,7 +182,7 @@ beside Claude Code's rather than inside it, so reinstalling one never disturbs t
 ~/.claude-kit
 ├── installed.db     knowledge about which components are installed
 ├── state.json       the last status check
-├── genie/           the local copy of the genie manifest and its scripts
+├── genie/           the local copy of the genie repo: manifest, scripts, marketplaces.json
 ├── registry/        the local copy of the main registry
 └── journal/         in-flight transaction; empty in steady state
 ```

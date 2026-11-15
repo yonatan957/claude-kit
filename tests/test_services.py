@@ -49,6 +49,13 @@ def test_search_gathers_every_source():
     assert [one.name for one in found] == ["code-reviewer", "formatter"]
 
 
+def test_search_takes_at_most_twenty_from_each_source():
+    many = [build_component(name=f"skill-{number}") for number in range(30)]
+    sources = [FakeSource("big", many), FakeSource("small", many[:3])]
+    found = services.search(ComponentKind.SKILL, "", sources)
+    assert [one.source for one in found] == ["big"] * 20 + ["small"] * 3
+
+
 def test_search_narrows_on_the_query():
     sources = [FakeSource("genie", [REVIEWER, FORMATTER])]
     found = services.search(ComponentKind.SKILL, "format", sources)
@@ -339,3 +346,22 @@ def test_one_failing_source_does_not_stop_the_others(tmp_path, no_real_claude_co
         InitReport("!", "genie", "not configured"),
     ]
     assert result.ok is False
+
+
+class _ReportingSource(FakeSource):
+    def init(self, home, install_missing):
+        return InitReport("✓", self.name, "ready")
+
+
+def test_a_source_an_init_brings_in_is_set_up_in_the_same_run(
+    tmp_path, no_real_claude_code, monkeypatch
+):
+    """What genie does: its init pulls the list the marketplace sources come from."""
+    sources = [_ReportingSource("genie")]
+    monkeypatch.setattr("claude_kit.services.init_service.AVAILABLE_SOURCES", sources)
+    monkeypatch.setattr(
+        "claude_kit.services.init_service.refresh_sources",
+        lambda: sources.append(_ReportingSource("team")) if len(sources) == 1 else None,
+    )
+    result = services.init(home=tmp_path / "kit", install_missing=False)
+    assert [report.label for report in result.sources] == ["genie", "team"]

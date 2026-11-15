@@ -16,7 +16,7 @@ from claude_kit.helpers import (
     ToolReport,
     ensure_tool,
 )
-from claude_kit.sources import AVAILABLE_SOURCES, InitReport, Source
+from claude_kit.sources import AVAILABLE_SOURCES, InitReport, Source, refresh_sources
 from claude_kit.storage import KitState, connect, ensure_schema, write_state
 
 __all__ = ["CLAUDE_CODE", "InitResult", "init"]
@@ -51,6 +51,7 @@ def init(
 ) -> InitResult:
     """Create the home, schema and state file. Existing ones are left alone."""
     home = home or CLAUDE_KIT_HOME
+    refresh = sources is None
     sources = AVAILABLE_SOURCES if sources is None else sources
     claude_code = ensure_tool(CLAUDE_CODE, install=install_missing)
 
@@ -70,7 +71,11 @@ def init(
         write_state(state, KitState())
 
     reports: list[InitReport] = []
-    for source in sources:
+    done: set[str] = set()
+    # the list is read again after each init: genie's brings in the marketplaces
+    while pending := [source for source in sources if source.name not in done]:
+        source = pending[0]
+        done.add(source.name)
         try:
             report = source.init(home, install_missing)
         except KitError as failure:
@@ -80,6 +85,8 @@ def init(
             report = InitReport("✗", source.name, reason)
         if report is not None:
             reports.append(report)
+        if refresh:
+            refresh_sources()
 
     return InitResult(
         home=home,

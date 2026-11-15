@@ -26,6 +26,9 @@ __all__ = [
     "GENIE_MD_FILE_NAME",
     "GENIE_LABEL",
     "MCP_SCOPE",
+    "MARKETPLACES_FILE_NAME",
+    "MARKETPLACE_LABEL",
+    "KNOWN_MARKETPLACES_FILE",
 ]
 
 
@@ -67,3 +70,11 @@ GENIE_MANIFEST_FILE_NAME = "manifest.json"
 GENIE_MD_FILE_NAME = "genie.md"
 GENIE_LABEL = "genie"
 MCP_SCOPE = "user"
+
+# which marketplaces to register: {"<name>": "<git url>"}, kept in the genie repo
+MARKETPLACES_FILE_NAME = "marketplaces.json"
+MARKETPLACE_LABEL = "marketplace"
+# Claude Code's own record of the marketplaces it has, and where it cloned each one
+KNOWN_MARKETPLACES_FILE = (
+    Path.home() / ".claude" / "plugins" / "known_marketplaces.json"
+)
