@@ -8,7 +8,9 @@ import os
 from pathlib import Path
 
 __all__ = [
+    "DEFAULT_CLAUDE_KIT_HOME",
     "CLAUDE_KIT_HOME",
+    "CLAUDE_GLOBAL_MD",
     "DATABASE_FILE_NAME",
     "STATE_FILE_NAME",
     "TIMEOUT",
@@ -21,6 +23,7 @@ __all__ = [
     "GENIE_REPO_URL",
     "GENIE_DIR_NAME",
     "GENIE_MANIFEST_FILE_NAME",
+    "GENIE_MD_FILE_NAME",
     "GENIE_LABEL",
     "MCP_SCOPE",
 ]
@@ -33,9 +36,12 @@ def _number(value: str | None, fallback: float) -> float:
         return fallback
 
 
+DEFAULT_CLAUDE_KIT_HOME = Path.home() / ".claude-kit"
 CLAUDE_KIT_HOME = Path(
-    os.environ.get("CLAUDE_KIT_HOME") or Path.home() / ".claude-kit"
+    os.environ.get("CLAUDE_KIT_HOME") or DEFAULT_CLAUDE_KIT_HOME
 ).expanduser()
+# mission 7 (CLAUDE_CONFIG_DIR) makes this configurable
+CLAUDE_GLOBAL_MD = Path.home() / ".claude" / "CLAUDE.md"
 
 DATABASE_FILE_NAME = "installed.db"
 STATE_FILE_NAME = "state.json"
@@ -58,5 +64,6 @@ DEFAULT_GENIE_REPO_URL = "https://gitlab.com/yonatan22660/genie.git"
 GENIE_REPO_URL = os.environ.get("GENIE_REPO_URL") or DEFAULT_GENIE_REPO_URL
 GENIE_DIR_NAME = "genie"
 GENIE_MANIFEST_FILE_NAME = "manifest.json"
+GENIE_MD_FILE_NAME = "genie.md"
 GENIE_LABEL = "genie"
 MCP_SCOPE = "user"

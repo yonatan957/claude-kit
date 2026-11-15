@@ -7,6 +7,7 @@ import pytest
 
 from claude_kit.helpers import SourceError, SourceUnreachable, run
 from claude_kit.sources import GenieSource
+from claude_kit.sources.genie import genie_source
 from claude_kit.sources.genie.repo import sync_repo
 
 MANIFEST_TEXT = (Path(__file__).parent / "data" / "genie" / "manifest.json").read_text()
@@ -75,3 +76,50 @@ def test_a_bad_url_is_a_warning(tmp_path):
     assert report.mark == "!"
     assert report.detail.startswith("unreachable -- git: ")
     assert report.detail.endswith("no local copy")
+
+
+@pytest.fixture
+def claude_md(tmp_path, monkeypatch) -> Path:
+    path = tmp_path / "claude" / "CLAUDE.md"
+    monkeypatch.setattr(genie_source, "CLAUDE_GLOBAL_MD", path)
+    return path
+
+
+def init_genie(remote: Path, tmp_path: Path) -> str:
+    return GenieSource(repo_url=str(remote)).init(tmp_path / "kit", True).detail
+
+
+def import_line(tmp_path: Path) -> str:
+    return f"@{(tmp_path / 'kit' / 'genie' / 'genie.md').as_posix()}"
+
+
+def test_without_genie_md_claude_md_is_left_alone(tmp_path, remote, claude_md):
+    assert init_genie(remote, tmp_path) == f"3 entries from {remote}"
+    assert not claude_md.exists()
+
+
+def commit_genie_md(remote: Path) -> None:
+    (remote / "genie.md").write_text("# team rules\n")
+    commit(remote, MANIFEST_TEXT)
+
+
+def test_genie_md_gets_its_import_line(tmp_path, remote, claude_md):
+    commit_genie_md(remote)
+    assert init_genie(remote, tmp_path) == f"3 entries, genie.md linked from {remote}"
+    assert claude_md.read_text() == f"{import_line(tmp_path)}\n"
+
+
+def test_a_second_init_does_not_add_the_line_again(tmp_path, remote, claude_md):
+    commit_genie_md(remote)
+    init_genie(remote, tmp_path)
+    init_genie(remote, tmp_path)
+    assert claude_md.read_text() == f"{import_line(tmp_path)}\n"
+
+
+def test_a_personal_claude_md_keeps_its_content(tmp_path, remote, claude_md):
+    commit_genie_md(remote)
+    claude_md.parent.mkdir()
+    claude_md.write_text("# mine\n\n- keep this", encoding="utf-8")
+    init_genie(remote, tmp_path)
+    expected = f"# mine\n\n- keep this\n{import_line(tmp_path)}\n"
+    assert claude_md.read_text() == expected

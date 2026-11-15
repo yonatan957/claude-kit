@@ -14,10 +14,13 @@ from typing import Any
 from claude_kit.components import ClaudeComponent, ComponentKind
 from claude_kit.helpers import (
     CLAUDE_BINARY,
+    CLAUDE_GLOBAL_MD,
     CLAUDE_KIT_HOME,
+    DEFAULT_CLAUDE_KIT_HOME,
     GENIE_DIR_NAME,
     GENIE_LABEL,
     GENIE_MANIFEST_FILE_NAME,
+    GENIE_MD_FILE_NAME,
     GENIE_REPO_URL,
     MCP_SCOPE,
     NOT_FOUND_CODE,
@@ -80,6 +83,7 @@ class GenieSource(Source):
         genie_dir = home / GENIE_DIR_NAME
         try:
             manifest = sync_repo(self.repo_url, genie_dir, self.runner)
+            linked = _link_genie_md(genie_dir / GENIE_MD_FILE_NAME, home)
         except (KitError, OSError) as failure:
             unreachable = isinstance(failure, SourceUnreachable)
             problem = "unreachable" if unreachable else "failed"
@@ -91,7 +95,9 @@ class GenieSource(Source):
             )
             return InitReport("!", self.name, f"{problem} -- {reason}, {kept}")
         count = len(manifest.entries)
-        return InitReport("✓", self.name, f"{count} entries from {self.repo_url}")
+        linked_note = ", genie.md linked" if linked else ""
+        detail = f"{count} entries{linked_note} from {self.repo_url}"
+        return InitReport("✓", self.name, detail)
 
     def search(self, kind: ComponentKind, query: str = "") -> list[ClaudeComponent]:
         if not self.supports(kind):
@@ -288,6 +294,25 @@ def _fill_placeholders(template: Any, placeholder_values: Mapping[str, str]) -> 
     if isinstance(template, list):
         return [_fill_placeholders(item, placeholder_values) for item in template]
     return template
+
+
+def _link_genie_md(genie_md: Path, home: Path) -> bool:
+    if not genie_md.is_file():
+        return False
+    if home == DEFAULT_CLAUDE_KIT_HOME:
+        import_line = f"@~/{genie_md.relative_to(Path.home()).as_posix()}"
+    else:
+        import_line = f"@{genie_md.as_posix()}"
+    text = ""
+    if CLAUDE_GLOBAL_MD.is_file():
+        text = CLAUDE_GLOBAL_MD.read_text(encoding="utf-8")
+    if import_line in (line.strip() for line in text.splitlines()):
+        return True
+    CLAUDE_GLOBAL_MD.parent.mkdir(parents=True, exist_ok=True)
+    separator = "\n" if text and not text.endswith("\n") else ""
+    with CLAUDE_GLOBAL_MD.open("a", encoding="utf-8", newline="") as claude_md:
+        claude_md.write(f"{separator}{import_line}\n")
+    return True
 
 
 def _to_component(entry: GenieEntry) -> ClaudeComponent:

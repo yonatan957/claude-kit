@@ -10,16 +10,17 @@ starts. Nothing here happens in parallel.
 
 | 1 | Record installs in the database | done |
 | 2 | The genie source | done |
-| 3 | One look for every command | review |
-| 4 | Search: parallel, tolerant, real columns | todo |
-| 5 | `install --source` and `--upgrade` | todo |
-| 6 | `CLAUDE_CONFIG_DIR` | todo |
-| 7 | The catalog | todo |
-| 8 | `ck status` that really checks, and `ck upgrade` | todo |
-| 9 | Tags | todo |
-| 10 | Rollback | todo |
-| 11 | Make the README match | todo |
-| 12 | Ship it: binary and npm | todo |
+| 3 | One look for every command | done |
+| 4 | The org's CLAUDE.md through genie | review |
+| 5 | Search: parallel, tolerant, real columns | todo |
+| 6 | `install --source` and `--upgrade` | todo |
+| 7 | `CLAUDE_CONFIG_DIR` | todo |
+| 8 | The catalog | todo |
+| 9 | `ck status` that really checks, and `ck upgrade` | todo |
+| 10 | Tags | todo |
+| 11 | Rollback | todo |
+| 12 | Make the README match | todo |
+| 13 | Ship it: binary and npm | todo |
 
 ---
 
@@ -59,7 +60,7 @@ Then one file per area: `test_storage.py` (18), `test_services.py` (19), `test_s
 **Done when:** install a skill, `ck list` shows it, uninstall it, `ck list` is empty again.
 Installing the same thing twice exits 6 instead of showing a traceback.
 
-**Unblocks:** missions 5, 8 and 9 all need rows in the database to work on.
+**Unblocks:** missions 6, 9 and 10 all need rows in the database to work on.
 
 ---
 
@@ -78,7 +79,7 @@ skillhub.
 
 ---
 
-## 3 — One look for every command · review
+## 3 — One look for every command · done
 
 **Goal:** `init`, `list`, `status`, `install` and `uninstall` print like `--help` does.
 
@@ -87,11 +88,27 @@ skillhub.
 Piped output stays plain. Services keep returning data, not text.
 
 **Done when:** `ck list` is a table, `ck init` is aligned ✓/✗ lines, and
-`ck list > out.txt` has no escape codes. Mission 4's search table uses the same helper.
+`ck list > out.txt` has no escape codes. Mission 5's search table uses the same helper.
 
 ---
 
-## 4 — Search: parallel, tolerant, real columns
+## 4 — The org's CLAUDE.md through genie · review
+
+**Goal:** every developer gets the team's Claude instructions from `ck init`.
+
+`genie.md` lives in the genie repo, so the clone already brings it. After a successful
+sync, GenieSource.init makes sure `~/.claude/CLAUDE.md` contains one import line,
+`@~/.claude-kit/genie/genie.md` (a full path with `/` when `CLAUDE_KIT_HOME` is not the
+default). It creates the file if needed, appends the line if it is missing, and never
+touches anything else in it. No genie.md in the repo means nothing to do.
+`~/.claude` is fixed for now; mission 7 (`CLAUDE_CONFIG_DIR`) makes it configurable.
+
+**Done when:** after `ck init`, `/memory` in Claude shows genie.md, a second init adds
+nothing, and a personal CLAUDE.md keeps all its content.
+
+---
+
+## 5 — Search: parallel, tolerant, real columns
 
 **Goal:** three README promises in one file.
 
@@ -107,7 +124,7 @@ which one was unreachable, and exits 0. Exit 4 only when every source is down.
 
 ---
 
-## 5 — `install --source` and `--upgrade`
+## 6 — `install --source` and `--upgrade`
 
 **Goal:** the two flags the README documents.
 
@@ -118,7 +135,7 @@ Both are small: `get_source` and `add_component(replace=True)` already exist.
 
 ---
 
-## 6 — `CLAUDE_CONFIG_DIR`
+## 7 — `CLAUDE_CONFIG_DIR`
 
 **Goal:** the kit knows where packages land.
 
@@ -129,11 +146,11 @@ where files go and claude-kit takes its word for it.
 
 **Done when:** install verifies the files really are where Claude Code looks for them.
 
-**Unblocks:** mission 10 cannot undo file changes it cannot find.
+**Unblocks:** mission 11 cannot undo file changes it cannot find.
 
 ---
 
-## 7 — The catalog
+## 8 — The catalog
 
 **Goal:** the recommended-package list the README promises.
 
@@ -145,7 +162,7 @@ status reading `unknown` rather than failing — the README already says so.
 
 ---
 
-## 8 — `ck status` that really checks, and `ck upgrade`
+## 9 — `ck status` that really checks, and `ck upgrade`
 
 **Goal:** status stops being empty, and upgrade starts existing.
 
@@ -156,11 +173,11 @@ Anything it cannot work out reads `unknown`.
 Then `ck upgrade` — the three core components only, only the ones behind. Installed packages
 are never touched here; the README is explicit that those go through `ck install --upgrade`.
 
-**Depends on:** missions 1 and 7.
+**Depends on:** missions 1 and 8.
 
 ---
 
-## 9 — Tags
+## 10 — Tags
 
 **Goal:** tell two same-named packages apart.
 
@@ -175,7 +192,7 @@ column, but this is yours to pick.
 
 ---
 
-## 10 — Rollback
+## 11 — Rollback
 
 **Goal:** a failed install leaves the tree exactly as it was. Exit code 7.
 
@@ -187,12 +204,12 @@ This is also where exit code 5 gets used: the steps in `init` you can decline, a
 config questions on `install` that keep credentials out of the manifest, the logs and the
 command line.
 
-**Depends on:** missions 1, 6 and a real test suite — this is the one that cannot be built
+**Depends on:** missions 1, 7 and a real test suite — this is the one that cannot be built
 without tests that crash it at every step.
 
 ---
 
-## 11 — Make the README match
+## 12 — Make the README match
 
 **Goal:** the README says what the code does.
 
@@ -205,7 +222,7 @@ Some of this happens as each mission lands. What is left over:
 
 ---
 
-## 12 — Ship it: binary and npm
+## 13 — Ship it: binary and npm
 
 **Goal:** `npm install -g claude-kit` actually works.
 

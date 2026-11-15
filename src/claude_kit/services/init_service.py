@@ -11,6 +11,7 @@ from claude_kit.helpers import (
     DATABASE_FILE_NAME,
     STATE_FILE_NAME,
     KitError,
+    SourceError,
     Tool,
     ToolReport,
     ensure_tool,
@@ -73,7 +74,9 @@ def init(
         try:
             report = source.init(home, install_missing)
         except KitError as failure:
-            reason = str(failure).removeprefix(f"{source.name}: ")
+            reason = (
+                failure.reason if isinstance(failure, SourceError) else str(failure)
+            )
             report = InitReport("✗", source.name, reason)
         if report is not None:
             reports.append(report)
